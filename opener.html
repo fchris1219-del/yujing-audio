@@ -113,6 +113,22 @@
       font-size: 11px;
       font-weight: 600;
       letter-spacing: -0.3px;
+      overflow: hidden;
+      padding: 0;
+    }
+    .icon-btn.profile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+    .icon-btn.profile.has-img .user-avatar-fallback { display: none; }
+    .icon-btn.profile .user-avatar-fallback {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
     }
     .page-title {
       font-size: 34px;
@@ -567,7 +583,10 @@
         <div class="top-bar">
           <span></span>
           <div class="top-actions">
-            <button class="icon-btn profile" type="button" id="user-avatar">·</button>
+            <button class="icon-btn profile" type="button" id="user-avatar" aria-label="用户头像">
+              <img id="user-avatar-img" alt="" hidden />
+              <span class="user-avatar-fallback" id="user-avatar-fallback">·</span>
+            </button>
             <button class="icon-btn" type="button" aria-label="更多">···</button>
           </div>
         </div>
@@ -803,8 +822,71 @@
     const user = "{{user}}";
     const userName = user.includes("{{") ? "" : String(user).trim();
     const userInitial = [...userName][0] || "·";
-    const avatarBtn = document.getElementById("user-avatar");
-    if (avatarBtn) avatarBtn.textContent = userInitial;
+
+    function resolveUserAvatarUrl() {
+      try {
+        if (typeof getThumbnailUrl === "function") {
+          var key = (typeof user_avatar !== "undefined" && user_avatar) ? user_avatar : null;
+          if (key) {
+            var u = getThumbnailUrl("persona", key);
+            if (u) return u;
+          }
+        }
+      } catch (e) {}
+      try {
+        var roots = [];
+        try { if (window.parent && window.parent.document) roots.push(window.parent.document); } catch (e1) {}
+        try { if (window.top && window.top.document) roots.push(window.top.document); } catch (e2) {}
+        var sels = [
+          "#user_avatar img",
+          "img#user_avatar",
+          "#avatar_div img",
+          "#user-avatar img",
+          ".avatar[data-user] img",
+        ];
+        for (var r = 0; r < roots.length; r++) {
+          var doc = roots[r];
+          for (var i = 0; i < sels.length; i++) {
+            var el = doc.querySelector(sels[i]);
+            if (!el) continue;
+            var src = el.src || "";
+            if (src && src.indexOf("data:image/gif") < 0) return src;
+          }
+          var wrap = doc.querySelector("#user_avatar, #avatar_div");
+          if (wrap) {
+            if (wrap.tagName === "IMG" && wrap.src) return wrap.src;
+            var inner = wrap.querySelector("img");
+            if (inner && inner.src) return inner.src;
+            var bg = (window.getComputedStyle(wrap).backgroundImage || "").match(/url\(["']?(.*?)["']?\)/);
+            if (bg && bg[1]) return bg[1];
+          }
+        }
+      } catch (e) {}
+      return "";
+    }
+
+    function applyUserAvatar() {
+      var btn = document.getElementById("user-avatar");
+      var img = document.getElementById("user-avatar-img");
+      var fallback = document.getElementById("user-avatar-fallback");
+      if (!btn) return;
+      if (fallback) fallback.textContent = userInitial;
+      var url = resolveUserAvatarUrl();
+      if (url && img) {
+        img.hidden = false;
+        img.alt = userName || "user";
+        img.onload = function () { btn.classList.add("has-img"); };
+        img.onerror = function () {
+          img.hidden = true;
+          btn.classList.remove("has-img");
+        };
+        img.src = url;
+      }
+    }
+
+    applyUserAvatar();
+    setTimeout(applyUserAvatar, 400);
+    setTimeout(applyUserAvatar, 1200);
 
     const characters = [
       {
