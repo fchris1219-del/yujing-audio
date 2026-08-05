@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>开场白管理</title>
+  <style>
+    :root {
+      --bg: #000;
+      --surface: #1c1c1e;
+      --surface-2: #2c2c2e;
+      --text: #fff;
+      --text-secondary: #8e8e93;
+      --accent: #ff2d55;
+      --separator: #2c2c2e;
+      --player-bg: rgba(44, 44, 46, 0.92);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --tab-h: 52px;
+      --player-h: 64px;
+      /* ST iframe 父高常为 auto，height:100% 会塌成一条底栏；给手机框固定可视高度 */
+      --phone-h: 720px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: auto;
+      min-height: var(--phone-h);
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    .phone {
+      max-width: 430px;
+      width: 100%;
+      height: var(--phone-h);
+      min-height: 680px;
+      margin: 0 auto;
+      position: relative;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---------- Views ----------
+       ST 父页常会覆盖 section/div 的 display；对齐 ZYZ 用 !important，
+       并用绝对定位叠层，避免切页“点了没反应”。 */
+    .phone > .view {
+      position: absolute;
+      inset: 0;
+      display: none !important;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .phone > .view.active {
+      display: flex !important;
+    }
+
+    .scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 20px;
+      padding-bottom: calc(var(--player-h) + var(--tab-h) + var(--safe-bottom) + 16px);
+    }
+    .scroll.no-player {
+      padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 16px);
+    }
+    .scroll.detail-only {
+      padding-bottom: calc(24px + var(--safe-bottom));
+    }
+
+    /* ---------- Header ---------- */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 4px 4px;
+      min-height: 44px;
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: none;
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .icon-btn.ghost {
+      background: transparent;
+      color: var(--accent);
+      font-size: 22px;
+      width: auto;
+      padding: 0 4px;
+    }
+    .icon-btn.profile {
+      background: linear-gradient(135deg, #5b5b5f, #3a3a3c);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+    .page-title {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin: 4px 0 18px;
+      line-height: 1.15;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 28px 0 14px;
+    }
+
+    /* ---------- Library list ---------- */
+    .lib-list {
+      list-style: none;
+      border-top: 0.5px solid var(--separator);
+    }
+    .lib-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 0.5px solid var(--separator);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lib-item:active { opacity: 0.65; }
+    .lib-icon {
+      width: 26px;
+      height: 26px;
+      color: var(--accent);
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+    .lib-icon svg { width: 24px; height: 24px; fill: currentColor; }
+    .lib-label {
+      flex: 1;
+      font-size: 20px;
+      font-weight: 400;
+    }
+    .chevron {
+      color: #48484a;
+      font-size: 18px;
+      font-weight: 300;
+    }
+
+    /* Featured + Recently added placeholders */
+    .featured {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 8px 0 20px;
+    }
+    .ph-square {
+      background: var(--surface-2);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .ph-square:not(.has-img)::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%),
+        repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.03) 8px, rgba(255,255,255,0.03) 9px);
+    }
+    .ph-square.has-img::after { display: none; }
+    .ph-square img.cover-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+      z-index: 1;
+    }
+    .ph-label {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+      z-index: 1;
+      letter-spacing: 0.5px;
+    }
+    .featured .ph-square {
+      width: 168px;
+      height: 168px;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .featured-name {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      max-width: 168px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .recent-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 14px;
+    }
+    .recent-card { cursor: default; }
+    .recent-card .ph-square {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 8px;
+    }
+    .recent-card .name {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recent-card .sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---------- Sub list (图2) ---------- */
+    .list-rows { list-style: none; }
+    .list-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 0.5px solid var(--separator);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .list-row:active { opacity: 0.65; }
+    .list-row .thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .list-row .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .list-row .meta { flex: 1; min-width: 0; }
+    .list-row .meta .name {
+      font-size: 17px;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-row .meta .desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-row.no-thumb .meta { padding-left: 0; }
+    button.lib-item,
+    button.list-row {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    button.lib-item:active,
+    button.list-row:active { opacity: 0.65; }
+    button.list-row.opening-btn:active { opacity: 0.7; }
+
+    /* ---------- Character detail ---------- */
+    .detail-sheet {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: radial-gradient(ellipse at 50% 18%, #2a2420 0%, #12100e 42%, #000 100%);
+    }
+    .grabber {
+      width: 36px;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.28);
+      margin: 10px auto 6px;
+    }
+    .detail-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 22px 48px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .detail-art {
+      width: min(100%, 300px);
+      aspect-ratio: 1;
+      margin: 8px auto 20px;
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.55);
+    }
+    .detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .detail-head h1 {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: 0.04em;
+    }
+    .detail-head .role {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .detail-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .circle-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      border: none;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .detail-tag {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: #e8d5b5;
+      background: rgba(232, 213, 181, 0.1);
+      border: 1px solid rgba(232, 213, 181, 0.28);
+      border-radius: 999px;
+      padding: 5px 11px;
+      line-height: 1.2;
+    }
+
+    .detail-slogan {
+      margin: 0 0 22px;
+      padding: 14px 16px;
+      border-left: 2px solid rgba(232, 213, 181, 0.65);
+      background: linear-gradient(90deg, rgba(255,255,255,0.06), transparent 85%);
+      border-radius: 0 10px 10px 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.92);
+      font-family: "Songti SC", "STSong", "Noto Serif SC", "PingFang SC", serif;
+      letter-spacing: 0.03em;
+    }
+
+    .text-block {
+      margin-bottom: 20px;
+    }
+    .text-block h3 {
+      font-size: 12px;
+      font-weight: 650;
+      color: rgba(232, 213, 181, 0.72);
+      letter-spacing: 0.16em;
+      margin-bottom: 10px;
+    }
+    .text-block .body {
+      font-size: 15px;
+      line-height: 1.75;
+      color: rgba(255,255,255,0.86);
+      white-space: pre-wrap;
+    }
+    .text-block .body strong {
+      font-weight: 700;
+      color: #fff;
+    }
+    .detail-head .role strong {
+      font-weight: 650;
+      color: rgba(255,255,255,0.78);
+    }
+
+    .text-block.author .body {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.82);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .text-block .body .hl {
+      font-weight: 700;
+      color: #ff8a8a;
+    }
+    .model-chip {
+      display: inline;
+      font-weight: 650;
+      color: #e8d5b5;
+    }
+
+    /* ---------- Mini player ---------- */
+    .mini-player {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: calc(var(--tab-h) + var(--safe-bottom) + 4px);
+      height: var(--player-h);
+      background: var(--player-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px 0 10px;
+      z-index: 20;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    }
+    .mini-player.hidden { display: none !important; }
+    .mini-art {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .mini-info { flex: 1; min-width: 0; }
+    .mini-info .t {
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mini-info .a {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mini-controls {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: #fff;
+      font-size: 22px;
+    }
+    .mini-controls button {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    /* ---------- Tab bar ---------- */
+    .tab-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: calc(var(--tab-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: rgba(28, 28, 30, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid #38383a;
+      display: flex;
+      z-index: 30;
+    }
+    .tab-bar.hidden { display: none !important; }
+    .tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 10px;
+      cursor: pointer;
+      padding-top: 6px;
+    }
+    .tab.active { color: var(--accent); }
+    .tab svg { width: 24px; height: 24px; fill: currentColor; }
+
+    /* empty states for other tabs */
+    .placeholder-page {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 15px;
+      padding-bottom: calc(var(--player-h) + var(--tab-h));
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <!-- ========== 资料库 ========== -->
+    <section id="view-library" class="view active">
+      <div class="scroll">
+        <div class="top-bar">
+          <span></span>
+          <div class="top-actions">
+            <button class="icon-btn profile" type="button" id="user-avatar">·</button>
+            <button class="icon-btn" type="button" aria-label="更多">···</button>
+          </div>
+        </div>
+        <h1 class="page-title">资料库</h1>
+
+        <div class="featured">
+          <div class="ph-square has-img">
+            <img class="cover-img" src="https://i.postimg.cc/QMGMzGCt/jie-ping2026-08-01-11-11-12.png" alt="封面" />
+          </div>
+          <div class="featured-name">示例精选故事…</div>
+        </div>
+
+        <ul class="lib-list">
+          <li>
+            <button type="button" class="lib-item" data-nav="story" onclick="window.sqyShowView&&window.sqyShowView('story')">
+              <span class="lib-icon">
+                <svg viewBox="0 0 24 24"><path d="M6 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z"/></svg>
+              </span>
+              <span class="lib-label">故事简介</span>
+              <span class="chevron">›</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="lib-item" data-nav="character" onclick="window.sqyShowView&&window.sqyShowView('character')">
+              <span class="lib-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>
+              </span>
+              <span class="lib-label">角色简介</span>
+              <span class="chevron">›</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="lib-item" data-nav="opening" onclick="window.sqyShowView&&window.sqyShowView('opening')">
+              <span class="lib-icon">
+                <svg viewBox="0 0 24 24"><path d="M4 5h16v3H4V5zm0 5.5h16v3H4v-3zM4 16h10v3H4v-3z"/></svg>
+              </span>
+              <span class="lib-label">开场白选择</span>
+              <span class="chevron">›</span>
+            </button>
+          </li>
+        </ul>
+
+        <h2 class="section-title">最近添加</h2>
+        <div class="recent-grid">
+          <div class="recent-card">
+            <div class="ph-square has-img">
+              <img class="cover-img" src="https://i.postimg.cc/MKnKKKjy/jie-ping2026-08-01-11-11-29.png" alt="雨夜酒馆" />
+            </div>
+            <div class="name">雨夜酒馆</div>
+            <div class="sub">故事</div>
+          </div>
+          <div class="recent-card">
+            <div class="ph-square has-img">
+              <img class="cover-img" src="https://i.postimg.cc/PqTCxnHn/IMG-0807.jpg" alt="余令嘉" />
+            </div>
+            <div class="name">余令嘉</div>
+            <div class="sub">角色</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 故事简介详情（无播放器，同角色详情排版） ========== -->
+    <section id="view-story" class="view">
+      <div class="detail-sheet">
+        <div class="grabber"></div>
+        <div class="detail-scroll">
+          <button class="icon-btn ghost" type="button" data-back="library" style="margin-left:-8px;margin-bottom:4px;" onclick="window.sqyGoBack&&window.sqyGoBack('library')">‹</button>
+          <div class="ph-square detail-art has-img">
+            <img class="cover-img" src="https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.5/images/story-cover.png" alt="今天的我是好孩子吗？" />
+          </div>
+          <div class="detail-head">
+            <div>
+              <h1>今天的我是好孩子吗？</h1>
+              <div class="role">作者·<strong>山间玉</strong>（小红书：<strong>山肩雨</strong>）</div>
+            </div>
+            <div class="detail-actions">
+              <button class="circle-btn" type="button">☆</button>
+              <button class="circle-btn" type="button">···</button>
+            </div>
+          </div>
+
+          <div class="detail-tags">
+            <span class="detail-tag">多人</span>
+            <span class="detail-tag">暗黑罗曼司</span>
+            <span class="detail-tag">恶俗</span>
+            <span class="detail-tag">嬷嬷向</span>
+            <span class="detail-tag">精神病</span>
+            <span class="detail-tag">控制狂</span>
+            <span class="detail-tag">人渣</span>
+          </div>
+
+          <div class="text-block author">
+            <h3>作者的话</h3>
+            <div class="body">2026.08.05 发卡于 dc社区 多林国/旅程，<span class="hl">禁止倒卖二传引流</span>。
+写这个为了操逼，但是由于淫商太低，外加智商也不高，外加酷爱加剧情，导致开场白没有很好淫，但是值得一淫的是<strong>这三个人没有一个正常人</strong>，如果可以一起操或者轮流操是最好了。
+开场白还会继续更新的。</div>
+          </div>
+          <div class="text-block">
+            <h3>故事简介</h3>
+            <div class="body">天上白玉京，地上神仙侣，你们道是美玉无瑕，神仙眷侣，推杯换盏，<strong>聿饮瑜嘉</strong>。
+如果找了三个男的养自己被抓住了，<strong>记得多要点钱</strong>，因为你还要<strong>养小三</strong>。</div>
+          </div>
+          <div class="text-block">
+            <h3>游玩提醒</h3>
+            <div class="body">推荐模型 <span class="model-chip">gemini2.5</span>，<span class="model-chip">claude opus 4.6/4.8</span>，预设随缘，本人依旧使用 <span class="model-chip">冥王星</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 角色简介列表 ========== -->
+    <section id="view-character" class="view">
+      <div class="scroll">
+        <div class="top-bar">
+          <button class="icon-btn ghost" type="button" data-back="library" onclick="window.sqyGoBack&&window.sqyGoBack('library')">‹</button>
+          <div class="top-actions">
+            <button class="icon-btn ghost" type="button">＋</button>
+            <button class="icon-btn ghost" type="button">≡</button>
+            <button class="icon-btn ghost" type="button">···</button>
+          </div>
+        </div>
+        <h1 class="page-title">角色简介</h1>
+        <ul class="list-rows" id="character-list"></ul>
+      </div>
+    </section>
+
+    <!-- ========== 开场白选择列表 ========== -->
+    <section id="view-opening" class="view">
+      <div class="scroll">
+        <div class="top-bar">
+          <button class="icon-btn ghost" type="button" data-back="library" onclick="window.sqyGoBack&&window.sqyGoBack('library')">‹</button>
+          <div class="top-actions">
+            <button class="icon-btn ghost" type="button">＋</button>
+            <button class="icon-btn ghost" type="button">≡</button>
+            <button class="icon-btn ghost" type="button">···</button>
+          </div>
+        </div>
+        <h1 class="page-title">开场白选择</h1>
+        <ul class="list-rows" id="opening-list"></ul>
+      </div>
+    </section>
+
+    <!-- ========== 角色详情（无播放器） ========== -->
+    <section id="view-character-detail" class="view">
+      <div class="detail-sheet">
+        <div class="grabber"></div>
+        <div class="detail-scroll">
+          <button class="icon-btn ghost" type="button" data-back="character" style="margin-left:-8px;margin-bottom:4px;" onclick="window.sqyGoBack&&window.sqyGoBack('character')">‹</button>
+          <div class="ph-square detail-art" id="detail-art"><span class="ph-label">角色立绘占位</span></div>
+          <div class="detail-head">
+            <div>
+              <h1 id="detail-name">余令嘉</h1>
+            </div>
+            <div class="detail-actions">
+              <button class="circle-btn" type="button">☆</button>
+              <button class="circle-btn" type="button">···</button>
+            </div>
+          </div>
+
+          <div class="detail-tags" id="detail-tags"></div>
+          <div class="detail-slogan" id="detail-slogan"></div>
+
+          <div class="text-block">
+            <h3>角色简介</h3>
+            <div class="body" id="detail-bio"></div>
+          </div>
+          <div class="text-block author">
+            <h3>作者的话</h3>
+            <div class="body" id="detail-author"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 其他 Tab 占位 ========== -->
+    <section id="view-home" class="view">
+      <div class="placeholder-page">主页（预留）</div>
+    </section>
+    <section id="view-browse" class="view">
+      <div class="placeholder-page">新发现（预留）</div>
+    </section>
+    <section id="view-radio" class="view">
+      <div class="placeholder-page">广播（预留）</div>
+    </section>
+    <section id="view-search" class="view">
+      <div class="placeholder-page">搜索（预留）</div>
+    </section>
+
+    <!-- Mini Player -->
+    <div class="mini-player" id="mini-player">
+      <audio id="mini-audio" preload="metadata" src="https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.0/audio/A-COLD-PLAY.mp3"></audio>
+      <div class="ph-square mini-art has-img">
+        <img class="cover-img" src="https://i.postimg.cc/QMGMzGCt/jie-ping2026-08-01-11-11-12.png" alt="曲封" />
+      </div>
+      <div class="mini-info">
+        <div class="t" id="mini-title">A COLD PLAY</div>
+        <div class="a" id="mini-artist">The Kid LAROI</div>
+      </div>
+      <div class="mini-controls">
+        <button type="button" id="mini-play" aria-label="播放">▶</button>
+        <button type="button" id="mini-next" aria-label="下一首">⏭</button>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <nav class="tab-bar" id="tab-bar">
+      <button class="tab" type="button" data-tab="home" onclick="window.sqyShowView&&window.sqyShowView('home')">
+        <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg>
+        主页
+      </button>
+      <button class="tab" type="button" data-tab="browse" onclick="window.sqyShowView&&window.sqyShowView('browse')">
+        <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+        新发现
+      </button>
+      <button class="tab" type="button" data-tab="radio" onclick="window.sqyShowView&&window.sqyShowView('radio')">
+        <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-12C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 2c4.4 0 8 3.6 8 8s-3.6 8-8 8-8-3.6-8-8 3.6-8 8-8z"/></svg>
+        广播
+      </button>
+      <button class="tab active" type="button" data-tab="library" onclick="window.sqyShowView&&window.sqyShowView('library')">
+        <svg viewBox="0 0 24 24"><path d="M4 3h4v18H4V3zm6 0h4v18h-4V3zm6 0h4v18h-4V3z"/></svg>
+        资料库
+      </button>
+      <button class="tab" type="button" data-tab="search" onclick="window.sqyShowView&&window.sqyShowView('search')">
+        <svg viewBox="0 0 24 24"><path d="M10 3a7 7 0 015.5 11.3l4.1 4.1-1.4 1.4-4.1-4.1A7 7 0 1110 3zm0 2a5 5 0 100 10 5 5 0 000-10z"/></svg>
+        搜索
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    (function () {
+    const user = "{{user}}";
+    const userName = user.includes("{{") ? "" : String(user).trim();
+    const userInitial = [...userName][0] || "·";
+    const avatarBtn = document.getElementById("user-avatar");
+    if (avatarBtn) avatarBtn.textContent = userInitial;
+
+    const characters = [
+      {
+        name: "余令嘉",
+        tags: ["嗑药男", "贱货", "比格犬", "好狗狗", "音乐制作人"],
+        slogan: "今天的我是好孩子吗？",
+        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.1/images/yu-lingjia.jpg",
+        objectPosition: "center 8%",
+        bio: "录音笔：你觉得母亲的死亡对你有影响吗？我觉得其实，你所记住的事情太少了，很多你以为有关联的创伤可能和你想象的不一样。你对她印象还剩下什么？最深的一次……流血，流眼泪，哭着求你父亲不要离开这里。其他的……没有了吗？嗯，你继续说。在这十五年时间里，你遗忘的事情很多……一开始的时候能记住三四年，后来每三四个月就会忘掉一些人，一些事。说实话，令嘉，你吃的药太多了，你应该减掉一点量，你最近还有自我了结的想法吗？或者，我的建议是，你可以回国生活……\n\n……医生，我想，我最近想写歌了，因为创作是一件愉快的事情，因为就像呕吐，进食很好，但是进食让身体肮脏，疲惫，我可能还是需要吐出来。\n\n……医生，我最近碰到了一个，非常可爱的人，她喂我吃了一颗碳酸锂。",
+        author: "有精神病但是治好了一点，死皮赖脸，穷追猛打。\n学音乐的，没什么边界感，话多而且经常感觉他精神状态不是很正常，但有时候很可爱（很多时候很可爱），不知道是s还是m，爱咬人，很公狗，在一起可能得挨操，分手他可能会割手",
+      },
+      {
+        name: "宁为瑜",
+        tags: ["冷感男", "控制狂", "恶趣味", "主人", "总裁哥"],
+        slogan: "你想红？不用管他了，可以跟我。",
+        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.4/images/ning-weiyu.png",
+        objectPosition: "center 18%",
+        bio: "对宁为瑜来说，爱情是一种诡异的玩笑，如果父亲能够不和阿猫阿狗生下一大堆小猫小狗，或者姐姐能够嫁给“爱情”，他大概会礼貌的恭维一下。但是实际上是连恭维的必要也没有。他也没有搞懂，你到底是怎么出现在他生命里的？在赛车场擦肩而过，还是在宴会上惊鸿一瞥，看见你的照片只要刷下卡就能让你跪在他面前，无论是美丽的脸颊或者是你的臣服，都可以是一串数字，一张发票，或者……一个吻？可爱的玩具，属于他的宝贝，情人，恋人，或者只是他的一只小狗，难道就不能他说什么你就是什么吗？爱你吗？也可以，但是你可不可以教教他，不带有黑色幽默的爱情到底是什么样的。\n\n一个会折下许愿柳，许愿你今天睡个好觉的坏男人。",
+        author: "情绪稳定，但是控制狂，\n天龙人，时尚行业总裁哥，喜欢赛车，打工王，讲话喜欢拆台。而且讲话有点小贱，但是出手大方，比较纵容。值得一睡的主人，做得好会被奖励，给他做狗应该很幸福，有概率被他耍着玩儿。（没找到适合哥哥的脸，当作学生时代的毕业照吧，清纯）",
+      },
+      {
+        name: "宋聿修",
+        tags: ["狐狸男", "引导型人渣", "公务员", "闷骚", "daddy"],
+        slogan: "亲爱的，这是你送给我的礼物吗？",
+        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.2/images/song-yuxiu.png",
+        objectPosition: "center 8%",
+        bio: "宋聿修是一个正常人，他爱你，至于你爱不爱他，或者你是不是只爱他并没有那么重要。他是最好的情人，最好的丈夫，至少他从来没有想要剥夺你的人格。不管你是被扒光了放他面前，还是求他帮帮你。他都真诚的希望你幸福，成为你想要成为的自己，他一定会陪伴你，教导你，帮助你。但如果你能够明白，世界很可怕，会真诚的爱你的人少之又少，如果你能乖乖的，做一个好孩子，好好听他的话，那就更好了。他当然也会乐于成为你的爱人，性玩具，心理咨询师，daddy。成为你的一切。\n\n他得到了小木条之后，第二天的你莫名其妙的很想啥也不干每天就在家里给他当娇妻",
+        author: "温柔而且很照顾人，有点小恶趣味\n一个师兄，一个老公，比较有边界感，可能需要主动一点但是不主动也行，恋爱观健康且诡异，准备引导你找到自我价值和人格，成长成一个好孩子，然后允许你求他操你。",
+      },
+    ];
+
+    const SHELL_HINT = "万一，你是一只" + "好狗狗呢？";
+    const viewsWithChrome = new Set(["library", "character", "opening", "home", "browse", "radio", "search"]);
+    const tabViews = new Set(["home", "browse", "radio", "library", "search"]);
+
+    // 避免与 ST / jQuery 的 $ 冲突；用 qs / qsa
+    function qs(sel) { return document.querySelector(sel); }
+    function qsa(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function parseGreeting(raw) {
+      const text = String(raw || "");
+      const tm = text.match(/<!--\s*title:\s*([\s\S]*?)\s*-->/i);
+      const dm = text.match(/<!--\s*desc:\s*([\s\S]*?)\s*-->/i);
+      return {
+        title: tm ? String(tm[1] || "").trim() : "",
+        desc: dm ? String(dm[1] || "").trim() : "",
+        raw: text,
+      };
+    }
+
+    function isShellGreeting(text) {
+      return String(text || "").includes(SHELL_HINT);
+    }
+
+    // ST iframe：把 html/body/frame 高度撑到手机框，避免父级 height:auto 塌缩
+    function syncHeight() {
+      try {
+        document.documentElement.style.minHeight = "";
+        document.body.style.minHeight = "";
+        var phone = qs(".phone");
+        var h = Math.ceil(Math.max(
+          phone ? phone.offsetHeight : 0,
+          phone ? phone.scrollHeight : 0,
+          680
+        ));
+        document.documentElement.style.height = h + "px";
+        document.body.style.height = h + "px";
+        document.documentElement.style.minHeight = h + "px";
+        document.body.style.minHeight = h + "px";
+        if (window.frameElement) {
+          window.frameElement.style.height = h + "px";
+          window.frameElement.style.minHeight = h + "px";
+          window.frameElement.style.maxHeight = "none";
+        }
+      } catch (e) {}
+    }
+
+    // null-safe：ST iframe 里 chrome 节点偶发缺失时不能让整次切页炸掉
+    function showView(id) {
+      id = String(id || "");
+      qsa(".view").forEach(function (v) {
+        v.classList.remove("active");
+        try { v.style.removeProperty("display"); } catch (e) {}
+      });
+      const view = qs("#view-" + id);
+      if (view) {
+        view.classList.add("active");
+        // 再写一层 inline，防止外部 CSS 盖掉 .active
+        try { view.style.setProperty("display", "flex", "important"); } catch (e) {
+          view.style.display = "flex";
+        }
+        try { view.scrollTop = 0; } catch (e) {}
+      } else {
+        console.warn("[三缺一] 找不到视图 #view-" + id);
+      }
+
+      const showChrome = viewsWithChrome.has(id);
+      const mini = qs("#mini-player");
+      const tabBar = qs("#tab-bar");
+      if (mini) mini.classList.toggle("hidden", !showChrome);
+      if (tabBar) tabBar.classList.toggle("hidden", !showChrome);
+
+      if (tabViews.has(id)) {
+        qsa(".tab").forEach(function (t) {
+          t.classList.toggle("active", t.getAttribute("data-tab") === id);
+        });
+      }
+
+      qsa(".scroll").forEach(function (s) {
+        s.classList.toggle("no-player", !showChrome);
+      });
+
+      if (id === "opening") loadOpeningsFromSwipes();
+      try {
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(function () {
+            syncHeight();
+            setTimeout(syncHeight, 80);
+          });
+        } else {
+          syncHeight();
+          setTimeout(syncHeight, 80);
+        }
+      } catch (e) {
+        syncHeight();
+      }
+    }
+
+    // 尽早挂到 window，保证 HTML 里 inline onclick 能调到
+    window.sqyShowView = showView;
+    window.sqyGoBack = showView;
+
+
+
+    /* ── 开场白：对齐 ZYZ 模式 ──
+       getChatMessages("0", {include_swipe:true}) → 跳过 swipe 0 / shell
+       点击：再读一次 swipes → setChatMessage(..., 0, {swipe_id, refresh})
+       用 button + 直接 onclick，禁止锚点跳转  */
+    async function loadOpeningsFromSwipes() {
+      const listEl = qs("#opening-list");
+      if (!listEl) return;
+      listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">读取中…</div><div class="desc">正在读取开场白 swipes</div></div></div></li>';
+
+      try {
+        if (typeof getChatMessages !== "function") {
+          throw new Error("当前环境没有 getChatMessages");
+        }
+        const msgs = await getChatMessages("0", { include_swipe: true });
+        const swipes = msgs && msgs[0] && Array.isArray(msgs[0].swipes) ? msgs[0].swipes : [];
+        if (!swipes.length || swipes.length <= 1) {
+          listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">暂无开场白</div><div class="desc">未找到可切换的 alternate swipes</div></div></div></li>';
+        } else {
+        listEl.innerHTML = "";
+        // 与 ZYZ 一致：从 index 1 起；若某条仍是 shell 文案则跳过
+        for (let i = 1; i < swipes.length; i++) {
+          const raw = String(swipes[i] == null ? "" : swipes[i]);
+          if (isShellGreeting(raw)) continue;
+          const p = parseGreeting(raw);
+          const title = p.title || ("开场白 " + String(i).padStart(2, "0"));
+          const desc = p.desc || ("swipe #" + i + " · 点击切换");
+
+          const li = document.createElement("li");
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "list-row no-thumb opening-btn";
+          btn.setAttribute("data-swipe", String(i));
+          btn.innerHTML =
+            '<div class="meta"><div class="name">' + escapeHtml(title) +
+            '</div><div class="desc">' + escapeHtml(desc) +
+            '</div></div><span class="chevron">›</span>';
+
+          btn.setAttribute("onclick", "window.sqyApplyOpening&&window.sqyApplyOpening(" + i + ")");
+          btn.onclick = (function (swipeId) {
+            return function (e) {
+              if (e && e.preventDefault) e.preventDefault();
+              if (window.sqyApplyOpening) window.sqyApplyOpening(swipeId);
+            };
+          })(i);
+
+          li.appendChild(btn);
+          listEl.appendChild(li);
+        }
+
+        if (!listEl.children.length) {
+          listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">暂无开场白</div><div class="desc">可切换 swipe 为空</div></div></div></li>';
+        }
+        }
+      } catch (e) {
+        console.warn("[三缺一] 读取开场白失败", e);
+        listEl.innerHTML =
+          '<li><div class="list-row no-thumb"><div class="meta"><div class="name">读取失败</div><div class="desc">' +
+          escapeHtml(String(e && e.message ? e.message : e)) +
+          "</div></div></div></li>";
+      }
+      syncHeight();
+    }
+
+    function renderCharacters() {
+      const list = qs("#character-list");
+      if (!list) return;
+      list.innerHTML = "";
+      characters.forEach(function (c, i) {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "list-row";
+        btn.setAttribute("data-character", String(i));
+        const pos = c.objectPosition ? ' style="object-position:' + c.objectPosition + '"' : "";
+        btn.innerHTML =
+          '<div class="ph-square avatar has-img"><img class="cover-img" src="' + c.avatar +
+          '" alt="' + escapeHtml(c.name) + '" loading="eager" referrerpolicy="no-referrer"' + pos +
+          ' /></div><div class="meta"><div class="name">' + escapeHtml(c.name) +
+          '</div><div class="desc">' + escapeHtml((c.tags || []).slice(0, 3).join(" · ")) +
+          '</div></div><span class="chevron">›</span>';
+        btn.setAttribute("onclick", "window.sqyOpenCharacter&&window.sqyOpenCharacter(" + i + ")");
+        btn.onclick = function (e) {
+          if (e && e.preventDefault) e.preventDefault();
+          openCharacter(i);
+        };
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    function openCharacter(index) {
+      const c = characters[index];
+      if (!c) return;
+      const nameEl = qs("#detail-name");
+      const sloganEl = qs("#detail-slogan");
+      const bioEl = qs("#detail-bio");
+      const authorEl = qs("#detail-author");
+      if (nameEl) nameEl.textContent = c.name;
+      if (sloganEl) sloganEl.textContent = c.slogan || "";
+      if (bioEl) bioEl.textContent = c.bio || "";
+      if (authorEl) authorEl.textContent = c.author || "";
+      const tagsEl = qs("#detail-tags");
+      if (tagsEl) {
+        tagsEl.innerHTML = (c.tags || []).map(function (t) {
+          return '<span class="detail-tag">' + escapeHtml(t) + "</span>";
+        }).join("");
+      }
+      const art = qs("#detail-art");
+      if (art) {
+        art.classList.add("has-img");
+        const pos = c.objectPosition ? ' style="object-position:' + c.objectPosition + '"' : "";
+        art.innerHTML =
+          '<img class="cover-img" src="' + c.avatar + '" alt="' + escapeHtml(c.name) +
+          '" loading="eager" referrerpolicy="no-referrer"' + pos + " />";
+      }
+      showView("character-detail");
+    }
+
+    window.sqyShowView = showView;
+    window.sqyGoBack = showView;
+    window.sqyOpenCharacter = function (i) { openCharacter(Number(i)); };
+    window.sqyApplyOpening = async function (swipeId) {
+      swipeId = Number(swipeId);
+      try {
+        if (typeof getChatMessages !== "function" || typeof setChatMessage !== "function") {
+          throw new Error("缺少 getChatMessages / setChatMessage");
+        }
+        var m = await getChatMessages("0", { include_swipe: true });
+        var content = m && m[0] && m[0].swipes && m[0].swipes[swipeId];
+        if (!content) throw new Error("swipe #" + swipeId + " 不存在");
+        await setChatMessage(String(content), 0, {
+          swipe_id: swipeId,
+          refresh: "display_and_render_current",
+        });
+      } catch (err) {
+        console.warn("[三缺一] 应用开场白失败", err);
+        alert("应用失败：" + (err && err.message ? err.message : err));
+      }
+    };
+
+    function bindNavClicks() {
+      qsa("[data-nav]").forEach(function (el) {
+        var id = el.getAttribute("data-nav");
+        if (!id) return;
+        el.setAttribute("onclick", "window.sqyShowView&&window.sqyShowView('" + id + "')");
+        el.onclick = function (e) {
+          if (e && e.preventDefault) e.preventDefault();
+          showView(id);
+        };
+      });
+
+      qsa("[data-back]").forEach(function (el) {
+        var id = el.getAttribute("data-back");
+        if (!id) return;
+        el.setAttribute("onclick", "window.sqyGoBack&&window.sqyGoBack('" + id + "')");
+        el.onclick = function (e) {
+          if (e && e.preventDefault) e.preventDefault();
+          showView(id);
+        };
+      });
+
+      qsa(".tab").forEach(function (tab) {
+        var id = tab.getAttribute("data-tab");
+        if (!id) return;
+        tab.setAttribute("onclick", "window.sqyShowView&&window.sqyShowView('" + id + "')");
+        tab.onclick = function (e) {
+          if (e && e.preventDefault) e.preventDefault();
+          showView(id);
+        };
+      });
+    }
+
+    // 捕获阶段兜底：DOM 被重克隆后 inline onclick / 属性仍可能丢，靠委托再拦一次
+    if (!window.__sqyNavDelegated) {
+      window.__sqyNavDelegated = true;
+      document.addEventListener("click", function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var nav = t.closest("[data-nav]");
+        if (nav) {
+          var id = nav.getAttribute("data-nav");
+          if (id && window.sqyShowView) {
+            e.preventDefault();
+            window.sqyShowView(id);
+          }
+          return;
+        }
+        var back = t.closest("[data-back]");
+        if (back) {
+          var bid = back.getAttribute("data-back");
+          if (bid && window.sqyGoBack) {
+            e.preventDefault();
+            window.sqyGoBack(bid);
+          }
+          return;
+        }
+        var ch = t.closest("[data-character]");
+        if (ch && window.sqyOpenCharacter) {
+          e.preventDefault();
+          window.sqyOpenCharacter(ch.getAttribute("data-character"));
+          return;
+        }
+        var tab = t.closest("[data-tab]");
+        if (tab && window.sqyShowView) {
+          var tid = tab.getAttribute("data-tab");
+          if (tid) {
+            e.preventDefault();
+            window.sqyShowView(tid);
+          }
+        }
+      }, true);
+    }
+
+    // Mini player
+    const audio = document.getElementById("mini-audio");
+    const playBtn = document.getElementById("mini-play");
+    const nextBtn = document.getElementById("mini-next");
+
+    function syncPlayBtn() {
+      if (!playBtn) return;
+      playBtn.textContent = audio && !audio.paused ? "❚❚" : "▶";
+      playBtn.setAttribute("aria-label", audio && !audio.paused ? "暂停" : "播放");
+    }
+
+    if (playBtn && audio) {
+      playBtn.onclick = async function () {
+        try {
+          if (audio.paused) await audio.play();
+          else audio.pause();
+        } catch (err) {
+          console.warn("播放失败", err);
+        }
+        syncPlayBtn();
+      };
+      audio.addEventListener("play", syncPlayBtn);
+      audio.addEventListener("pause", syncPlayBtn);
+      audio.addEventListener("ended", function () {
+        audio.currentTime = 0;
+        syncPlayBtn();
+      });
+    }
+
+    if (nextBtn && audio) {
+      nextBtn.onclick = function () {
+        audio.currentTime = 0;
+        audio.play().catch(function () {});
+        syncPlayBtn();
+      };
+    }
+
+    function boot() {
+      bindNavClicks();
+      renderCharacters();
+      syncHeight();
+      requestAnimationFrame(function () {
+        syncHeight();
+        setTimeout(syncHeight, 80);
+      });
+    }
+
+    window.addEventListener("load", syncHeight);
+    window.addEventListener("resize", syncHeight);
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", boot);
+    } else {
+      boot();
+    }
+    })();
+  </script>
+</body>
+</html>
