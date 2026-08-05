@@ -393,9 +393,15 @@
 
     .detail-tags {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-start;
       gap: 8px;
       margin-bottom: 16px;
+    }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     .detail-tag {
       font-size: 12px;
@@ -407,15 +413,7 @@
       padding: 5px 11px;
       line-height: 1.2;
       white-space: nowrap;
-    }
-    .tag-row-break {
-      flex-basis: 100%;
-      width: 0;
-      height: 0;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      overflow: hidden;
+      flex: 0 0 auto;
     }
 
     .detail-slogan {
@@ -677,14 +675,17 @@
           </div>
 
           <div class="detail-tags">
-            <span class="detail-tag">多人</span>
-            <span class="detail-tag">暗黑罗曼司</span>
-            <span class="detail-tag">恶俗</span>
-            <span class="tag-row-break" aria-hidden="true"></span>
-            <span class="detail-tag">嬷嬷向</span>
-            <span class="detail-tag">精神病</span>
-            <span class="detail-tag">控制狂</span>
-            <span class="detail-tag">人渣</span>
+            <div class="tag-row">
+              <span class="detail-tag">多人</span>
+              <span class="detail-tag">暗黑罗曼司</span>
+              <span class="detail-tag">恶俗</span>
+            </div>
+            <div class="tag-row">
+              <span class="detail-tag">嬷嬷向</span>
+              <span class="detail-tag">精神病</span>
+              <span class="detail-tag">控制狂</span>
+              <span class="detail-tag">人渣</span>
+            </div>
           </div>
 
           <div class="text-block author">
