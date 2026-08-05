@@ -293,6 +293,16 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
+    .list-row .row-index {
+      flex-shrink: 0;
+      width: 22px;
+      text-align: right;
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      align-self: flex-start;
+      margin-top: 1px;
+    }
     .list-row .meta { flex: 1; min-width: 0; }
     .list-row .meta .name {
       font-size: 17px;
@@ -1064,12 +1074,14 @@
         } else {
         listEl.innerHTML = "";
         // 与 ZYZ 一致：从 index 1 起；若某条仍是 shell 文案则跳过
+        let seq = 0;
         for (let i = 1; i < swipes.length; i++) {
           const raw = String(swipes[i] == null ? "" : swipes[i]);
           if (isShellGreeting(raw)) continue;
           const p = parseGreeting(raw);
           const title = p.title || ("开场白 " + String(i).padStart(2, "0"));
           const desc = p.desc || ("swipe #" + i + " · 点击切换");
+          seq += 1;
 
           const li = document.createElement("li");
           const btn = document.createElement("button");
@@ -1077,6 +1089,7 @@
           btn.className = "list-row no-thumb opening-btn";
           btn.setAttribute("data-swipe", String(i));
           btn.innerHTML =
+            '<span class="row-index">' + seq + '</span>' +
             '<div class="meta"><div class="name">' + escapeHtml(title) +
             '</div><div class="desc">' + escapeHtml(desc) +
             '</div></div><span class="chevron">›</span>';
