@@ -370,7 +370,9 @@
     .chat {
       background: #f2f2f7;
       color: #000;
+      height: 100%;
       min-height: 0;
+      overflow: hidden;
     }
     .chat-top {
       flex-shrink: 0;
@@ -378,7 +380,7 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
-      padding: 6px 14px 10px;
+      padding: 4px 14px 8px;
     }
     .chat-nav {
       display: flex;
@@ -444,13 +446,13 @@
       min-height: 0;
       overflow-x: hidden;
       overflow-y: auto;
-      padding: 8px 16px 12px;
+      padding: 10px 16px 8px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       -webkit-overflow-scrolling: touch;
     }
-    /* Short threads sit above the composer (iMessage), not stuck under the header */
+    /* Short threads sit above the composer (iMessage); long threads still scroll from the top */
     .chat-thread::before {
       content: "";
       flex: 1 1 auto;
@@ -461,7 +463,7 @@
       display: flex;
       flex-direction: column;
       max-width: 78%;
-      gap: 3px;
+      gap: 4px;
       flex-shrink: 0;
     }
     .bubble-row.in { align-self: flex-start; align-items: flex-start; }
@@ -470,12 +472,13 @@
     .bubble {
       position: relative;
       display: block;
-      padding: 8px 13px;
+      padding: 9px 14px;
       border-radius: 18px;
       font-size: 16px;
-      line-height: 1.35;
+      line-height: 1.4;
       letter-spacing: -0.01em;
       word-break: break-word;
+      overflow-wrap: anywhere;
       overflow: visible;
       -webkit-user-select: none;
       user-select: none;
@@ -619,12 +622,14 @@
 
     .chat-input {
       position: relative;
-      flex-shrink: 0;
+      flex: 0 0 auto;
+      margin-top: auto;
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 12px 20px;
+      padding: 8px 12px max(14px, env(safe-area-inset-bottom, 0px));
       background: #f2f2f7;
+      z-index: 2;
     }
     .plus-btn {
       width: 32px;
@@ -1087,8 +1092,13 @@
       qs("#chat-name").textContent = m.name;
       qs("#chat-time").textContent = m.chatTime;
 
-      const rows = FIELD_KEYS.map((label, i) => {
-        const body = m[label] || "…";
+      const visibleFields = FIELD_KEYS.filter((label) => {
+        const body = String(m[label] || "").trim();
+        if (label === "关系") return Boolean(body) && body !== "…";
+        return true;
+      });
+      const rows = visibleFields.map((label, i) => {
+        const body = String(m[label] || "").trim() || "…";
         return `
         <div class="bubble-row in">
           <div class="bubble-label">${label}</div>
