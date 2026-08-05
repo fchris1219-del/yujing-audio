@@ -6,7 +6,7 @@
   <title>状态栏 · iMessage</title>
   <style>
     :root {
-      --frame-w: 430px;
+      --frame-w: 390px;
       --radius-noti: 24px;
       --imessage-blue: #007aff;
     }
@@ -22,18 +22,17 @@
     }
 
     .page {
-      min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 20px 12px;
+      padding: 12px;
     }
 
+    /* 尺寸不依赖 vh：酒馆 iframe 里视口高度不可靠，会把内容裁掉 */
     .phone {
-      width: min(96vw, var(--frame-w));
+      width: min(100%, var(--frame-w));
       aspect-ratio: 9 / 17.5;
       height: auto;
-      max-height: min(94vh, 960px);
-      max-width: min(96vw, calc(min(94vh, 960px) * 9 / 17.5), var(--frame-w));
+      min-height: 640px;
       border-radius: 36px;
       overflow: hidden;
       position: relative;
@@ -143,7 +142,7 @@
       flex-direction: column;
       gap: 10px;
       padding-bottom: 4px;
-      min-height: 0;
+      flex-shrink: 0;
     }
 
     /* 锁屏健康提醒：Apple Health「重要」红警示风格 */
