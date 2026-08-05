@@ -393,10 +393,14 @@
 
     .detail-tags {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+      flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 16px;
+    }
+    .detail-tags.story-tags {
+      flex-direction: column;
+      align-items: flex-start;
+      flex-wrap: nowrap;
     }
     .tag-row {
       display: flex;
@@ -674,7 +678,7 @@
             </div>
           </div>
 
-          <div class="detail-tags">
+          <div class="detail-tags story-tags">
             <div class="tag-row">
               <span class="detail-tag">多人</span>
               <span class="detail-tag">暗黑罗曼司</span>
