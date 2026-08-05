@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>状态栏 · iMessage</title>
+  <style>
+    :root {
+      --frame-w: 430px;
+      --radius-noti: 24px;
+      --imessage-blue: #007aff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: #0b0b0c;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px 12px;
+    }
+
+    .phone {
+      width: min(96vw, var(--frame-w));
+      aspect-ratio: 9 / 16;
+      height: auto;
+      max-height: min(92vh, 900px);
+      max-width: min(96vw, calc(min(92vh, 900px) * 9 / 16), var(--frame-w));
+      border-radius: 36px;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 30px 80px rgba(0, 0, 0, 0.65);
+    }
+
+    .view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+    }
+    .view.active { display: flex; }
+
+    /* ========== P2 Lock ========== */
+    .lock {
+      color: #fff;
+    }
+    .lock-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        center / cover no-repeat url("https://i.postimg.cc/zXcV4GGJ/IMG-0837.png");
+      transform: scale(1.02);
+    }
+    .lock-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.18) 0%,
+        transparent 22%,
+        transparent 48%,
+        rgba(0, 0, 0, 0.35) 100%
+      );
+    }
+    .lock-content {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 18px 10px;
+      min-height: 0;
+    }
+
+    .sys-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 8px;
+      height: 28px;
+      font-size: 14px;
+      font-weight: 600;
+      gap: 8px;
+    }
+    .sys-bar #carrier {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sys-bar .right {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+      opacity: 0.95;
+    }
+
+    .lock-head {
+      margin-top: 18px;
+      text-align: center;
+    }
+    .lock-icon {
+      width: 18px;
+      height: 18px;
+      margin: 0 auto 6px;
+      opacity: 0.95;
+    }
+    .lock-time {
+      font-size: clamp(56px, 18vw, 72px);
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 0.95;
+      font-variant-numeric: tabular-nums;
+    }
+    .lock-date {
+      margin-top: 4px;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .noti-stack {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 0;
+    }
+
+    /* 锁屏健康提醒（Health 通知风格） */
+    .lock-health {
+      margin-top: 10px;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(28px) saturate(160%);
+      -webkit-backdrop-filter: blur(28px) saturate(160%);
+      box-shadow:
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.45),
+        0 10px 28px rgba(0, 0, 0, 0.12);
+      color: #1c1c1e;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-align: left;
+    }
+    .lh-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: linear-gradient(160deg, #32d74b, #248a3d);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(36, 138, 61, 0.28);
+    }
+    .lh-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+    .lh-body {
+      flex: 1;
+      min-width: 0;
+      padding-top: 1px;
+    }
+    .lh-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .lh-app {
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      color: rgba(28, 28, 30, 0.55);
+      text-transform: none;
+    }
+    .lh-now {
+      font-size: 11px;
+      color: rgba(28, 28, 30, 0.4);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .lh-title {
+      margin-top: 2px;
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.25;
+    }
+    .lh-text {
+      margin-top: 3px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.35;
+      color: rgba(28, 28, 30, 0.78);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 通知样式参考 p1 banner：深色玻璃 + 圆头像 + 双行文案 */
+    .noti {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 11px 14px 11px 11px;
+      border: none;
+      border-radius: var(--radius-noti);
+      text-align: left;
+      cursor: pointer;
+      color: #fff;
+      background: rgba(40, 40, 42, 0.55);
+      backdrop-filter: blur(28px) saturate(160%);
+      -webkit-backdrop-filter: blur(28px) saturate(160%);
+      box-shadow:
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.22),
+        0 8px 24px rgba(0, 0, 0, 0.18);
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .noti:active {
+      transform: scale(0.985);
+      opacity: 0.92;
+    }
+
+    .noti-avatar-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+    .noti-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #fff;
+      display: block;
+      box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+    }
+    .noti-avatar.is-ph {
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.05em;
+    }
+    .badge-count {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #fff;
+      color: #111;
+      font-size: 10px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      line-height: 1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+    .badge-app {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+      background: #34c759;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 0 1.5px rgba(40, 40, 42, 0.85);
+    }
+    .badge-app svg { width: 10px; height: 10px; fill: #fff; }
+
+    .noti-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .noti-id {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .noti-preview {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.92);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .noti-time {
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 2px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.55);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lock-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 10px 10px 8px;
+    }
+    .quick-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: default;
+    }
+    .quick-btn svg { width: 20px; height: 20px; fill: currentColor; }
+    .unlock-hint {
+      text-align: center;
+      padding-bottom: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+      letter-spacing: 0.01em;
+    }
+    .home-bar {
+      width: 128px;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.9);
+      margin: 8px auto 4px;
+    }
+
+    /* ========== P1 Chat ========== */
+    .chat {
+      background: #f2f2f7;
+      color: #000;
+    }
+    .chat-top {
+      background: rgba(242, 242, 247, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+      padding: 4px 14px 8px;
+    }
+    .chat-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+      min-height: 32px;
+    }
+    .circle-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      color: #000;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+    .circle-btn svg { width: 15px; height: 15px; fill: currentColor; }
+    .chat-profile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .chat-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 10px;
+    }
+    .chat-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+    .chat-name {
+      font-size: 14px;
+      font-weight: 650;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .chat-name .chev { opacity: 0.35; font-weight: 400; }
+    .chat-sub {
+      font-size: 11px;
+      color: #8e8e93;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .chat-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bubble-row {
+      display: flex;
+      flex-direction: column;
+      max-width: 78%;
+    }
+    .bubble-row.in { align-self: flex-start; align-items: flex-start; }
+    .bubble-row.out { align-self: flex-end; align-items: flex-end; }
+
+    .bubble {
+      position: relative;
+      padding: 9px 13px;
+      border-radius: 18px;
+      font-size: 16px;
+      line-height: 1.35;
+      word-break: break-word;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .bubble.in {
+      background: #e9e9eb;
+      color: #000;
+      border-bottom-left-radius: 5px;
+    }
+    .bubble.in.reactable {
+      cursor: pointer;
+    }
+    .bubble.in.reactable:active {
+      filter: brightness(0.97);
+    }
+    .bubble.out {
+      background: var(--imessage-blue);
+      color: #fff;
+      border-bottom-right-radius: 5px;
+    }
+
+    .bubble-react {
+      position: absolute;
+      top: -10px;
+      right: -8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1.5px solid var(--imessage-blue);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .react-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      background: rgba(242, 242, 247, 0.35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .react-layer.show { display: block; }
+
+    .react-bar {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.16),
+        0 0 0 0.5px rgba(0, 0, 0, 0.06);
+      transform: translateX(-50%) scale(0.92);
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 41;
+    }
+    .react-layer.show .react-bar {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+    .react-bar::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      width: 10px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      transform: translateX(-50%) rotate(45deg);
+      box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.04);
+    }
+    .react-emoji {
+      width: 34px;
+      height: 34px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      font-size: 22px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    .react-emoji:active {
+      transform: scale(1.18);
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .bubble-label {
+      font-size: 11px;
+      color: #8e8e93;
+      margin-bottom: 3px;
+      padding-left: 4px;
+      letter-spacing: 0.04em;
+    }
+    .delivered {
+      font-size: 11px;
+      color: #8e8e93;
+      margin-top: 4px;
+      align-self: flex-end;
+      padding-right: 2px;
+    }
+    .typing {
+      width: 52px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+    }
+    .typing i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #8e8e93;
+      opacity: 0.55;
+      animation: blink 1.2s infinite ease-in-out;
+    }
+    .typing i:nth-child(2) { animation-delay: 0.15s; }
+    .typing i:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+      40% { opacity: 0.9; transform: translateY(-2px); }
+    }
+
+    .chat-input {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px 28px;
+      background: #f2f2f7;
+    }
+    .plus-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #e5e5ea;
+      font-size: 22px;
+      line-height: 1;
+      color: #000;
+      cursor: default;
+      flex-shrink: 0;
+    }
+    .composer {
+      flex: 1;
+      min-width: 0;
+      min-height: 36px;
+      border-radius: 999px;
+      border: none;
+      background: #e5e5ea;
+      display: flex;
+      align-items: center;
+      padding: 0 6px 0 14px;
+      gap: 6px;
+      transition: background 0.2s ease;
+    }
+    .composer:focus-within {
+      background: #ebebf0;
+    }
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      height: 36px;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      font-family: inherit;
+      color: #000;
+    }
+    .composer input::placeholder {
+      color: #8e8e93;
+    }
+    .composer-mic,
+    .composer-send {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      padding: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
+    }
+    .composer-mic {
+      background: transparent;
+      color: #8e8e93;
+    }
+    .composer-mic svg { width: 20px; height: 20px; fill: currentColor; }
+    .composer-send {
+      background: var(--imessage-blue);
+      color: #fff;
+      display: none;
+    }
+    .composer-send svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .composer-send:active { transform: scale(0.92); }
+
+    .chat-input.has-text .composer-mic { display: none; }
+    .chat-input.has-text .composer-send { display: grid; }
+    .chat-input.has-text .composer {
+      background: #e5e5ea;
+      padding-right: 4px;
+    }
+
+    /* 点击发送后浮层：纯黑气泡，区别于蓝色发出消息 */
+    .send-float {
+      position: absolute;
+      right: 14px;
+      bottom: calc(100% + 64px);
+      max-width: min(72%, 250px);
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: #000;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.4;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      z-index: 5;
+      word-break: break-word;
+    }
+    .send-float::after {
+      content: "";
+      position: absolute;
+      right: 22px;
+      bottom: -5px;
+      width: 10px;
+      height: 10px;
+      background: #000;
+      transform: rotate(45deg);
+      border-radius: 1px;
+    }
+    .send-float.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="phone" id="phone">
+      <!-- P2 锁屏 -->
+      <section class="view lock active" id="view-lock">
+        <div class="lock-bg" aria-hidden="true"></div>
+        <div class="lock-content">
+          <div class="sys-bar">
+            <span id="carrier">今天的我是好孩子吗？</span>
+            <div class="right">
+              <span>●●●●</span>
+              <span>5G</span>
+              <span>▮</span>
+            </div>
+          </div>
+
+          <div class="lock-head">
+            <svg class="lock-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17 9V7a5 5 0 0 0-10 0v2H5v12h14V9h-2zm-8-2a3 3 0 0 1 6 0v2H9V7zm3 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+            </svg>
+            <div class="lock-time" id="lock-time">07:10</div>
+            <div class="lock-date" id="lock-date">Sunday, March 30</div>
+          </div>
+
+          <div class="noti-stack" id="noti-stack"></div>
+
+          <div class="lock-health" id="lock-health" role="status" aria-live="polite">
+            <div class="lh-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.3-9.3-8.2C.7 9.8 2.1 6 5.4 5.3c1.8-.4 3.5.4 4.6 1.8C11.1 5.7 12.8 4.9 14.6 5.3c3.3.7 4.7 4.5 2.7 7.5C18.7 16.7 12 21 12 21z"/></svg>
+            </div>
+            <div class="lh-body">
+              <div class="lh-head">
+                <div class="lh-app">健康</div>
+                <div class="lh-now" id="lh-now">现在</div>
+              </div>
+              <div class="lh-title">健康提醒</div>
+              <div class="lh-text" id="lh-text">暂无提醒</div>
+            </div>
+          </div>
+
+          <div class="lock-foot">
+            <button class="quick-btn" type="button" aria-label="手电筒">
+              <svg viewBox="0 0 24 24"><path d="M9 2h6l1 4H8L9 2zm-1 5h8v3l2 3v9H6v-9l2-3V7zm4 5a2 2 0 1 0 .001 3.999A2 2 0 0 0 12 12z"/></svg>
+            </button>
+            <div>
+              <div class="unlock-hint">Swipe up to unlock</div>
+              <div class="home-bar"></div>
+            </div>
+            <button class="quick-btn" type="button" aria-label="相机">
+              <svg viewBox="0 0 24 24"><path d="M9 4l1.5 2H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1.5L9 4zm3 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- P1 对话 -->
+      <section class="view chat" id="view-chat">
+        <div class="chat-top">
+          <div class="chat-nav">
+            <button class="circle-btn" type="button" id="btn-back" aria-label="返回">
+              <svg viewBox="0 0 24 24"><path d="M15.5 4.5L7 12l8.5 7.5 1.4-1.5L10 12l6.9-6z"/></svg>
+            </button>
+            <button class="circle-btn" type="button" aria-label="视频">
+              <svg viewBox="0 0 24 24"><path d="M4 7h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm14 2.5l4-2.5v10l-4-2.5v-5z"/></svg>
+            </button>
+          </div>
+          <div class="chat-profile">
+            <div class="chat-avatar" id="chat-avatar">头像</div>
+            <div class="chat-name"><span id="chat-name">姓名</span><span class="chev">›</span></div>
+            <div class="chat-sub">
+              <div>iMessage</div>
+              <div id="chat-time">14:32</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-thread" id="chat-thread"></div>
+
+        <div class="react-layer" id="react-layer" aria-hidden="true">
+          <div class="react-bar" id="react-bar" role="listbox" aria-label="贴表情"></div>
+        </div>
+
+        <div class="chat-input" id="chat-input">
+          <div class="send-float" id="send-float" aria-live="polite"></div>
+          <button class="plus-btn" type="button" aria-label="更多">+</button>
+          <div class="composer">
+            <input id="composer-input" type="text" placeholder="输入讯息" autocomplete="off" />
+            <button class="composer-mic" type="button" aria-label="语音" tabindex="-1">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg>
+            </button>
+            <button class="composer-send" type="button" id="composer-send" aria-label="发送">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 19V5" />
+                <path d="M6.5 10.5L12 5l5.5 5.5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const CDN_IMG = "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.5/images";
+    const WEEKDAYS = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+    const CHAR_DEFS = [
+      {
+        key: "yu_lingjia",
+        name: "余令嘉",
+        notiId: "余令嘉",
+        avatar: CDN_IMG + "/yu-lingjia.jpg",
+        count: 4,
+      },
+      {
+        key: "ning_weiyu",
+        name: "宁为瑜",
+        notiId: "宁为瑜",
+        avatar: CDN_IMG + "/ning-weiyu.png",
+        count: 4,
+      },
+      {
+        key: "song_yuxiu",
+        name: "宋聿修",
+        notiId: "宋聿修",
+        avatar: CDN_IMG + "/song-yuxiu.png",
+        count: 4,
+      },
+    ];
+
+    const FIELD_KEYS = ["状态", "想法", "行动", "关系"];
+
+    const lockMeta = {
+      time: "07:10",
+      date: "Sunday, March 30",
+      carrier: "今天的我是好孩子吗？",
+      clockHm: "07:10",
+    };
+
+    let healthReminder = "暂无提醒";
+    let activeIndex = -1;
+
+    // 每角色「想说」：点发送后显示在发送键上方黑气泡，不进会话
+    let roundLine = "";
+
+    const messages = CHAR_DEFS.map((d) => ({
+      id: d.key,
+      name: d.name,
+      notiId: d.notiId,
+      avatar: d.avatar,
+      time: "--:--",
+      count: d.count,
+      chatTime: "--:--",
+      状态: "…",
+      想法: "…",
+      行动: "…",
+      关系: "…",
+      想说: "",
+    }));
+
+    const reactionEmojis = ["😂", "🥰", "😍", "🥺", "😊", "😘", "😭", "😳"];
+
+    let reactTarget = null;
+    let longPressTimer = null;
+
+    const imessageIcon = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3C6.5 3 2 6.7 2 11.2c0 2.6 1.5 4.9 3.8 6.4L5 21l4.1-1.6c.9.2 1.9.4 2.9.4 5.5 0 10-3.7 10-8.2S17.5 3 12 3z"/>
+      </svg>`;
+
+    function qs(sel, root) {
+      return (root || document).querySelector(sel);
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function stripPrefix(raw, prefixes) {
+      let s = String(raw ?? "").trim();
+      for (let i = 0; i < prefixes.length; i++) {
+        const p = prefixes[i];
+        if (s.indexOf(p) === 0) {
+          s = s.slice(p.length).trim();
+          break;
+        }
+      }
+      return s;
+    }
+
+    function unwrapQuotes(s) {
+      let v = String(s ?? "").trim();
+      if (
+        (v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') ||
+        (v.charAt(0) === "\u201c" && v.charAt(v.length - 1) === "\u201d") ||
+        (v.charAt(0) === "「" && v.charAt(v.length - 1) === "」")
+      ) {
+        v = v.slice(1, -1).trim();
+      }
+      return v;
+    }
+
+    function tagText(raw, tag) {
+      const re = new RegExp("<" + tag + ">([\\s\\S]*?)</" + tag + ">", "i");
+      const m = String(raw || "").match(re);
+      return m ? String(m[1] || "").trim() : "";
+    }
+
+    function parseCharFields(body) {
+      const out = { 状态: "", 想法: "", 行动: "", 关系: "", 想说: "" };
+      const parts = String(body || "").split("|");
+      for (let i = 0; i < parts.length; i++) {
+        const part = String(parts[i] || "").trim();
+        const m = part.match(/^(状态|想法|行动|关系|想说)\s*[:：]\s*([\s\S]*)$/);
+        if (!m) continue;
+        const key = m[1];
+        let val = String(m[2] || "").trim();
+        if (key === "想说") val = unwrapQuotes(val);
+        out[key] = val;
+      }
+      return out;
+    }
+
+    function parseDateTime(rawTime) {
+      const cleaned = stripPrefix(rawTime, ["当前时间:", "当前时间："]);
+      const m = cleaned.match(
+        /(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})/
+      );
+      if (!m) {
+        const hm = cleaned.match(/(\d{1,2}):(\d{2})/);
+        return {
+          time: hm ? (hm[1].padStart(2, "0") + ":" + hm[2]) : cleaned || "--:--",
+          date: cleaned || "",
+          clockHm: hm ? (hm[1].padStart(2, "0") + ":" + hm[2]) : "",
+        };
+      }
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      const d = Number(m[3]);
+      const hh = String(m[4]).padStart(2, "0");
+      const mm = m[5];
+      const dt = new Date(y, mo - 1, d);
+      const wd = isNaN(dt.getTime()) ? "" : WEEKDAYS[dt.getDay()];
+      return {
+        time: hh + ":" + mm,
+        date: mo + "月" + d + "日" + (wd ? " " + wd : ""),
+        clockHm: hh + ":" + mm,
+      };
+    }
+
+    function applyLockMeta() {
+      qs("#lock-time").textContent = lockMeta.time;
+      qs("#lock-date").textContent = lockMeta.date;
+      qs("#carrier").textContent = lockMeta.carrier;
+      const nowEl = qs("#lh-now");
+      if (nowEl) nowEl.textContent = lockMeta.clockHm || "现在";
+    }
+
+    function applyHealthReminder() {
+      const el = qs("#lh-text");
+      if (el) el.textContent = healthReminder || "暂无提醒";
+    }
+
+    function avatarHTML(person, className) {
+      const av = person.avatar;
+      if (!av) return `<div class="${className} is-ph">头像</div>`;
+
+      const isUrl = /^https?:\/\//.test(String(av).trim());
+      if (isUrl) {
+        return `<img class="${className}" src="${av}" alt="${escapeHtml(person.name)}" loading="eager" referrerpolicy="no-referrer" />`;
+      }
+
+      return `<div class="${className} is-ph" style="font-size:28px; color: rgba(255,255,255,0.92); line-height:1;">${escapeHtml(av)}</div>`;
+    }
+
+    function renderNotifications() {
+      qs("#noti-stack").innerHTML = messages.map((m, i) => `
+        <button type="button" class="noti" data-index="${i}">
+          <div class="noti-avatar-wrap">
+            ${avatarHTML(m, "noti-avatar")}
+            <span class="badge-count">${m.count}</span>
+            <span class="badge-app">${imessageIcon}</span>
+          </div>
+          <div class="noti-body">
+            <div class="noti-id">${escapeHtml(m.notiId)}</div>
+            <div class="noti-preview">${escapeHtml(m.状态 || "…")}</div>
+          </div>
+          <div class="noti-time">${escapeHtml(m.time)}</div>
+        </button>
+      `).join("");
+    }
+
+    function syncComposerState() {
+      const input = qs("#composer-input");
+      const bar = qs("#chat-input");
+      const has =
+        Boolean(input && input.value.trim()) || Boolean(String(roundLine || "").trim());
+      bar.classList.toggle("has-text", has);
+    }
+
+    function hideSendFloat() {
+      qs("#send-float").classList.remove("show");
+    }
+
+    function showRoundBubble() {
+      const el = qs("#send-float");
+      const text = String(roundLine || "").trim();
+      if (!text) return;
+      el.textContent = text;
+      el.classList.remove("show");
+      void el.offsetWidth;
+      el.classList.add("show");
+    }
+
+    function openChat(index) {
+      const m = messages[index];
+      if (!m) return;
+      activeIndex = index;
+
+      const avatarEl = qs("#chat-avatar");
+      const av = m.avatar;
+      const isUrl = av ? /^https?:\/\//.test(String(av).trim()) : false;
+
+      if (isUrl) {
+        avatarEl.classList.remove("is-ph");
+        avatarEl.style.fontSize = "";
+        avatarEl.innerHTML = `<img src="${av}" alt="${escapeHtml(m.name)}" loading="eager" referrerpolicy="no-referrer" />`;
+      } else {
+        avatarEl.classList.add("is-ph");
+        avatarEl.style.fontSize = "34px";
+        avatarEl.textContent = av ? String(av) : "头像";
+      }
+
+      qs("#chat-name").textContent = m.name;
+      qs("#chat-time").textContent = m.chatTime;
+
+      const rows = FIELD_KEYS.map((label, i) => {
+        const body = m[label] || "…";
+        return `
+        <div class="bubble-row in">
+          <div class="bubble-label">${label}</div>
+          <div class="bubble in reactable" data-msg="${i}">${escapeHtml(body)}</div>
+        </div>`;
+      }).join("");
+
+      qs("#chat-thread").innerHTML =
+        rows +
+        `
+        <div class="bubble-row in">
+          <div class="bubble in typing" aria-hidden="true"><i></i><i></i><i></i></div>
+        </div>`;
+
+      bindBubbleLongPress();
+
+      roundLine = String(m.想说 || "").trim();
+      const input = qs("#composer-input");
+      input.value = roundLine;
+      input.placeholder = roundLine ? "想说" : "输入讯息";
+      syncComposerState();
+      hideSendFloat();
+      hideReactBar();
+
+      qs("#view-lock").classList.remove("active");
+      qs("#view-chat").classList.add("active");
+    }
+
+    function hideReactBar() {
+      const layer = qs("#react-layer");
+      if (!layer) return;
+      layer.classList.remove("show");
+      layer.setAttribute("aria-hidden", "true");
+      reactTarget = null;
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+
+    function showReactBar(bubble) {
+      reactTarget = bubble;
+      const layer = qs("#react-layer");
+      const bar = qs("#react-bar");
+      const bubbleRect = bubble.getBoundingClientRect();
+
+      bar.innerHTML = reactionEmojis.map((e) =>
+        `<button type="button" class="react-emoji" role="option" data-emoji="${e}" aria-label="${e}">${e}</button>`
+      ).join("");
+
+      layer.classList.add("show");
+      layer.setAttribute("aria-hidden", "false");
+
+      const layerRect = layer.getBoundingClientRect();
+      const pad = 14;
+      const barWidth = bar.offsetWidth || 260;
+      let centerX = bubbleRect.left - layerRect.left + bubbleRect.width / 2;
+      centerX += Math.min(28, Math.max(12, bubbleRect.width * 0.2));
+      const minCenter = barWidth / 2 + pad;
+      const maxCenter = layerRect.width - barWidth / 2 - pad;
+      centerX = Math.max(minCenter, Math.min(maxCenter, centerX));
+
+      const top = bubbleRect.top - layerRect.top - bar.offsetHeight - 14;
+      bar.style.left = `${centerX}px`;
+      bar.style.top = `${Math.max(52, top)}px`;
+    }
+
+    function applyReaction(emoji) {
+      if (!reactTarget) return;
+      let badge = reactTarget.querySelector(".bubble-react");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "bubble-react";
+        reactTarget.appendChild(badge);
+      }
+      badge.textContent = emoji;
+      hideReactBar();
+    }
+
+    function bindBubbleLongPress() {
+      const thread = qs("#chat-thread");
+      thread.querySelectorAll(".bubble.reactable").forEach((bubble) => {
+        const clear = () => {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        };
+
+        const start = (e) => {
+          if (e.type === "mousedown" && e.button !== 0) return;
+          clear();
+          longPressTimer = setTimeout(() => {
+            longPressTimer = null;
+            showReactBar(bubble);
+          }, 420);
+        };
+
+        bubble.addEventListener("touchstart", start, { passive: true });
+        bubble.addEventListener("mousedown", start);
+        bubble.addEventListener("touchend", clear);
+        bubble.addEventListener("touchmove", clear);
+        bubble.addEventListener("mouseup", clear);
+        bubble.addEventListener("mouseleave", clear);
+        bubble.addEventListener("contextmenu", (e) => e.preventDefault());
+      });
+    }
+
+    function backToLock() {
+      hideReactBar();
+      hideSendFloat();
+      activeIndex = -1;
+      roundLine = "";
+      qs("#composer-input").value = "";
+      qs("#composer-input").placeholder = "输入讯息";
+      syncComposerState();
+      qs("#view-chat").classList.remove("active");
+      qs("#view-lock").classList.add("active");
+    }
+
+    function applyStatusBar(raw) {
+      const text = String(raw || "");
+      if (!text) return false;
+
+      const timeRaw = tagText(text, "time");
+      if (timeRaw) {
+        const parsed = parseDateTime(timeRaw);
+        lockMeta.time = parsed.time;
+        lockMeta.date = parsed.date || lockMeta.date;
+        lockMeta.clockHm = parsed.clockHm || parsed.time;
+      }
+
+      const healthRaw = tagText(text, "health_reminder");
+      if (healthRaw) {
+        healthReminder = stripPrefix(healthRaw, ["健康提醒:", "健康提醒："]);
+      }
+
+      for (let i = 0; i < CHAR_DEFS.length; i++) {
+        const def = CHAR_DEFS[i];
+        const body = tagText(text, def.key);
+        if (!body) continue;
+        const fields = parseCharFields(body);
+        const m = messages[i];
+        m.状态 = fields.状态 || m.状态;
+        m.想法 = fields.想法 || m.想法;
+        m.行动 = fields.行动 || m.行动;
+        m.关系 = fields.关系 || m.关系;
+        m.想说 = fields.想说 || "";
+        m.time = lockMeta.clockHm || m.time;
+        m.chatTime = lockMeta.clockHm || m.chatTime;
+        m.count = FIELD_KEYS.length;
+      }
+
+      applyLockMeta();
+      applyHealthReminder();
+      renderNotifications();
+
+      if (activeIndex >= 0) openChat(activeIndex);
+      return true;
+    }
+
+    qs("#noti-stack").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-index]");
+      if (!btn) return;
+      openChat(Number(btn.dataset.index));
+    });
+    qs("#btn-back").addEventListener("click", backToLock);
+
+    qs("#react-layer").addEventListener("click", (e) => {
+      const emojiBtn = e.target.closest("[data-emoji]");
+      if (emojiBtn) {
+        applyReaction(emojiBtn.dataset.emoji);
+        return;
+      }
+      hideReactBar();
+    });
+
+    const composerInput = qs("#composer-input");
+    composerInput.addEventListener("input", () => {
+      // 用户改稿时仍以当前输入为「想说」发送内容
+      roundLine = composerInput.value.trim() ||
+        (activeIndex >= 0 ? String(messages[activeIndex].想说 || "").trim() : "");
+      syncComposerState();
+    });
+    composerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        qs("#composer-send").click();
+      }
+    });
+
+    qs("#composer-send").addEventListener("click", () => {
+      if (activeIndex >= 0) {
+        const fromChar = String(messages[activeIndex].想说 || "").trim();
+        const typed = composerInput.value.trim();
+        roundLine = typed || fromChar;
+      }
+      if (!String(roundLine || "").trim()) return;
+      showRoundBubble();
+      composerInput.value = "";
+      // 发送后仍保留原想说，便于再次点开发送
+      if (activeIndex >= 0) {
+        roundLine = String(messages[activeIndex].想说 || "").trim();
+        if (roundLine) composerInput.value = roundLine;
+      }
+      syncComposerState();
+    });
+
+    window.refreshStatus = function refresh() {
+      applyLockMeta();
+      applyHealthReminder();
+      renderNotifications();
+    };
+
+    window.setLockTime = function (time, date) {
+      if (time != null) {
+        lockMeta.time = time;
+        lockMeta.clockHm = time;
+      }
+      if (date != null) lockMeta.date = date;
+      applyLockMeta();
+    };
+
+    window.setRoundLine = function (text) {
+      roundLine = String(text ?? "");
+      syncComposerState();
+    };
+
+    window.setHealthReminder = function (text) {
+      healthReminder = stripPrefix(String(text ?? ""), ["健康提醒:", "健康提醒："]);
+      applyHealthReminder();
+    };
+
+    window.applyStatusBar = applyStatusBar;
+
+    // CDN thin-loader 注入：window.__STATUS_BAR__
+    (function bootPayload() {
+      const raw = window.__STATUS_BAR__;
+      if (raw) {
+        applyStatusBar(raw);
+        return;
+      }
+      // 本地预览用示例（无 payload 时）
+      applyStatusBar(
+        '[STATUS_BAR]<time>当前时间: 2026-08-05 10:51</time>' +
+        '<health_reminder>健康提醒: 坐太久了，起来走动两分钟。</health_reminder>' +
+        '<yu_lingjia>状态: 醒着|想法: 今天的鼓点有点早|行动: 靠在门框边看人|关系: 还差一点点靠近|想说: "你来了？"</yu_lingjia>' +
+        '<ning_weiyu>状态: 平静|想法: 先把话说清楚|行动: 递过一杯水|关系: 熟悉的距离|想说: "喝一点。"</ning_weiyu>' +
+        '<song_yuxiu>状态: 笑着|想法: 这局还没散|行动: 把伞搁在一边|关系: 旧识重逢|想说: "别站门口。"</song_yuxiu>[/STATUS_BAR]'
+      );
+    })();
+  </script>
+</body>
+</html>
