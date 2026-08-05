@@ -145,75 +145,89 @@
       padding-bottom: 4px;
     }
 
-    /* 锁屏健康提醒（Health 通知风格） */
+    /* 锁屏健康提醒：Apple Health「重要」红警示风格 */
     .lock-health {
       margin-top: 10px;
       width: 100%;
-      padding: 12px 14px;
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.55);
+      padding: 11px 14px 12px;
+      border-radius: var(--radius-noti);
+      background: rgba(40, 40, 42, 0.55);
       backdrop-filter: blur(28px) saturate(160%);
       -webkit-backdrop-filter: blur(28px) saturate(160%);
       box-shadow:
-        inset 0 0.5px 0 rgba(255, 255, 255, 0.45),
-        0 10px 28px rgba(0, 0, 0, 0.12);
-      color: #1c1c1e;
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.22),
+        0 8px 24px rgba(0, 0, 0, 0.18);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    .lh-urgency {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+    }
+    .lh-warn {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      display: block;
+    }
+    .lh-important {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #ff3b30;
+      line-height: 1;
+    }
+    .lh-now {
+      margin-left: auto;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.45);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .lh-main {
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      text-align: left;
+      min-width: 0;
     }
     .lh-icon {
       width: 42px;
       height: 42px;
       border-radius: 10px;
       flex-shrink: 0;
-      background: linear-gradient(160deg, #32d74b, #248a3d);
+      background: #fff;
       display: grid;
       place-items: center;
-      box-shadow: 0 4px 12px rgba(36, 138, 61, 0.28);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
     }
     .lh-icon svg {
-      width: 22px;
-      height: 22px;
-      fill: #fff;
+      width: 26px;
+      height: 26px;
+      display: block;
     }
     .lh-body {
       flex: 1;
       min-width: 0;
       padding-top: 1px;
     }
-    .lh-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .lh-app {
-      font-size: 12px;
-      font-weight: 650;
-      letter-spacing: 0.02em;
-      color: rgba(28, 28, 30, 0.55);
-      text-transform: none;
-    }
-    .lh-now {
-      font-size: 11px;
-      color: rgba(28, 28, 30, 0.4);
-      font-variant-numeric: tabular-nums;
-      flex-shrink: 0;
-    }
     .lh-title {
-      margin-top: 2px;
       font-size: 15px;
       font-weight: 650;
       line-height: 1.25;
+      color: #fff;
     }
     .lh-text {
-      margin-top: 3px;
+      margin-top: 2px;
       font-size: 14px;
       font-weight: 500;
       line-height: 1.35;
-      color: rgba(28, 28, 30, 0.78);
+      color: rgba(255, 255, 255, 0.78);
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -779,16 +793,24 @@
           <div class="noti-stack" id="noti-stack"></div>
 
           <div class="lock-health" id="lock-health" role="status" aria-live="polite">
-            <div class="lh-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.3-9.3-8.2C.7 9.8 2.1 6 5.4 5.3c1.8-.4 3.5.4 4.6 1.8C11.1 5.7 12.8 4.9 14.6 5.3c3.3.7 4.7 4.5 2.7 7.5C18.7 16.7 12 21 12 21z"/></svg>
+            <div class="lh-urgency">
+              <svg class="lh-warn" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#ff3b30" d="M12 2.2L1.6 20.4c-.35.62.1 1.4.82 1.4h19.16c.72 0 1.17-.78.82-1.4L12 2.2z"/>
+                <path fill="#fff" d="M11.1 9.2h1.8v6.2h-1.8V9.2zm0 7.4h1.8V18h-1.8v-1.4z"/>
+              </svg>
+              <span class="lh-important">重要</span>
+              <span class="lh-now" id="lh-now">现在</span>
             </div>
-            <div class="lh-body">
-              <div class="lh-head">
-                <div class="lh-app">健康</div>
-                <div class="lh-now" id="lh-now">现在</div>
+            <div class="lh-main">
+              <div class="lh-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path fill="#ff2d55" d="M12 21s-6.7-4.35-9.35-8.25C.55 9.55 2.05 5.7 5.45 5c1.85-.4 3.55.45 4.65 1.9C11.2 5.45 12.9 4.6 14.75 5c3.4.7 4.9 4.55 2.8 7.75C18.7 16.65 12 21 12 21z"/>
+                </svg>
               </div>
-              <div class="lh-title">健康提醒</div>
-              <div class="lh-text" id="lh-text">暂无提醒</div>
+              <div class="lh-body">
+                <div class="lh-title">健康提醒</div>
+                <div class="lh-text" id="lh-text">暂无提醒</div>
+              </div>
             </div>
           </div>
 
@@ -1115,10 +1137,11 @@
 
       bindBubbleLongPress();
 
+      // 想说只驱动发送键 / 黑气泡，绝不预填进输入框
       roundLine = String(m.想说 || "").trim();
       const input = qs("#composer-input");
-      input.value = roundLine;
-      input.placeholder = roundLine ? "想说" : "输入讯息";
+      input.value = "";
+      input.placeholder = "输入讯息";
       syncComposerState();
       hideSendFloat();
       hideReactBar();
@@ -1274,9 +1297,6 @@
 
     const composerInput = qs("#composer-input");
     composerInput.addEventListener("input", () => {
-      // 用户改稿时仍以当前输入为「想说」发送内容
-      roundLine = composerInput.value.trim() ||
-        (activeIndex >= 0 ? String(messages[activeIndex].想说 || "").trim() : "");
       syncComposerState();
     });
     composerInput.addEventListener("keydown", (e) => {
@@ -1287,19 +1307,17 @@
     });
 
     qs("#composer-send").addEventListener("click", () => {
-      if (activeIndex >= 0) {
-        const fromChar = String(messages[activeIndex].想说 || "").trim();
-        const typed = composerInput.value.trim();
-        roundLine = typed || fromChar;
-      }
-      if (!String(roundLine || "").trim()) return;
+      const fromChar =
+        activeIndex >= 0 ? String(messages[activeIndex].想说 || "").trim() : "";
+      const typed = composerInput.value.trim();
+      // 黑气泡优先展示角色「想说」；仅当用户自行输入时才覆盖
+      const bubbleText = fromChar || typed;
+      if (!bubbleText) return;
+      roundLine = bubbleText;
       showRoundBubble();
       composerInput.value = "";
-      // 发送后仍保留原想说，便于再次点开发送
-      if (activeIndex >= 0) {
-        roundLine = String(messages[activeIndex].想说 || "").trim();
-        if (roundLine) composerInput.value = roundLine;
-      }
+      // 发送后输入框保持空；有想说则继续亮出发送键
+      roundLine = fromChar;
       syncComposerState();
     });
 
