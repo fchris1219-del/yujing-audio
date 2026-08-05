@@ -178,6 +178,7 @@
       color: #48484a;
       font-size: 18px;
       font-weight: 300;
+      flex-shrink: 0;
     }
 
     /* Featured + Recently added placeholders */
@@ -304,9 +305,10 @@
       font-size: 14px;
       color: var(--text-secondary);
       margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.42;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .list-row.no-thumb .meta { padding-left: 0; }
     button.lib-item,
