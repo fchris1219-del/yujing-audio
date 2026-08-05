@@ -1297,14 +1297,13 @@
 
     window.applyStatusBar = applyStatusBar;
 
-    // CDN thin-loader 注入：window.__STATUS_BAR__
+    // CDN thin-loader 注入：window.__STATUS_BAR__（有定义则不走本地 demo）
     (function bootPayload() {
-      const raw = window.__STATUS_BAR__;
-      if (raw) {
-        applyStatusBar(raw);
+      if (typeof window.__STATUS_BAR__ !== "undefined") {
+        applyStatusBar(window.__STATUS_BAR__);
         return;
       }
-      // 本地预览用示例（无 payload 时）
+      // 本地 / 直开预览用示例
       applyStatusBar(
         '[STATUS_BAR]<time>当前时间: 2026-08-05 10:51</time>' +
         '<health_reminder>健康提醒: 坐太久了，起来走动两分钟。</health_reminder>' +
