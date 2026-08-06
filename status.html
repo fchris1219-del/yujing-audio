@@ -353,10 +353,20 @@
       align-items: flex-end;
       padding: 10px 10px 8px;
       flex-shrink: 0;
+      gap: 8px;
+    }
+    .lock-foot > div {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
     }
     .quick-btn {
       width: 48px;
       height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
       border-radius: 50%;
       border: none;
       background: rgba(255, 255, 255, 0.22);
@@ -366,6 +376,8 @@
       display: grid;
       place-items: center;
       cursor: default;
+      padding: 0;
+      box-sizing: border-box;
     }
     .quick-btn svg { width: 20px; height: 20px; fill: currentColor; }
     .unlock-hint {
@@ -764,6 +776,88 @@
     .send-float.show {
       opacity: 1;
       transform: translateY(0);
+    }
+
+    /* ---------- 手机端：桌面 (≥481px) 不动 ---------- */
+    @media (max-width: 480px) {
+      :root { --frame-w: 100%; }
+      .page { padding: 6px; }
+      .phone {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 9 / 16.8;
+        min-height: 560px;
+        height: auto;
+        border-radius: 28px;
+      }
+      .sys-bar {
+        height: 26px;
+        font-size: 12px;
+        padding: 0 6px;
+      }
+      .sys-bar #carrier { font-size: 11px; }
+      .sys-bar .right { font-size: 11px; gap: 4px; }
+      .lock-head { margin-top: 16px; }
+      .lock-time {
+        font-size: clamp(48px, 16vw, 64px);
+        letter-spacing: -1.5px;
+      }
+      .lock-date { font-size: 17px; }
+      .noti {
+        padding: 9px 11px;
+        gap: 10px;
+      }
+      .noti-avatar {
+        width: 38px;
+        height: 38px;
+      }
+      .noti-name { font-size: 14px; }
+      .noti-preview { font-size: 13px; }
+      .noti-time { font-size: 11px; }
+      .lock-health { padding: 10px 12px; }
+      .lh-title { font-size: 14px; }
+      .lh-text { font-size: 12px; }
+      .lock-foot {
+        padding: 8px 12px 10px;
+        gap: 6px;
+      }
+      .quick-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+      }
+      .quick-btn svg { width: 18px; height: 18px; }
+      .unlock-hint { font-size: 12px; }
+      .home-bar {
+        width: min(110px, 36vw);
+        margin: 6px auto 2px;
+      }
+      .chat-avatar {
+        width: 34px;
+        height: 34px;
+      }
+      .bubble {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .phone { border-radius: 22px; }
+      .lock-time {
+        font-size: clamp(42px, 15vw, 56px);
+      }
+      .lock-date { font-size: 15px; }
+      .quick-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+      }
+      .quick-btn svg { width: 16px; height: 16px; }
+      .unlock-hint { font-size: 11px; }
+      .home-bar { width: min(96px, 34vw); }
     }
   </style>
 </head>
