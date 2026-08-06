@@ -1054,33 +1054,70 @@
 
 
 
-    /* ── 开场白：对齐 ZYZ 模式 ──
-       getChatMessages("0", {include_swipe:true}) → 跳过 swipe 0 / shell
-       点击：再读一次 swipes → setChatMessage(..., 0, {swipe_id, refresh})
-       用 button + 直接 onclick，禁止锚点跳转  */
+    /* 聊天里 message 0 的 swipes 是建聊天那一刻从角色卡拷贝的快照，
+       之后改卡不会回写，所以优先读角色卡本身，读不到再退回 swipes */
+    let openingList = [];
+
+    async function fetchGreetings() {
+      try {
+        if (typeof getCharacter === "function") {
+          const c = await getCharacter("current");
+          if (c && Array.isArray(c.first_messages) && c.first_messages.length) {
+            return { list: c.first_messages, source: "card" };
+          }
+        }
+      } catch (e) { /* 换下一种取法 */ }
+
+      try {
+        if (typeof getCharData === "function") {
+          const d = await getCharData("current");
+          const alt = d && d.data && Array.isArray(d.data.alternate_greetings) ? d.data.alternate_greetings : [];
+          const list = (d && d.first_mes ? [d.first_mes] : []).concat(alt);
+          if (list.length) return { list, source: "card" };
+        }
+      } catch (e) { /* 换下一种取法 */ }
+
+      try {
+        const ctx = window.SillyTavern && typeof window.SillyTavern.getContext === "function"
+          ? window.SillyTavern.getContext() : null;
+        const ch = ctx && ctx.characters ? ctx.characters[ctx.characterId] : null;
+        const alt = ch && ch.data && Array.isArray(ch.data.alternate_greetings) ? ch.data.alternate_greetings : [];
+        const list = (ch && ch.first_mes ? [ch.first_mes] : []).concat(alt);
+        if (list.length) return { list, source: "card" };
+      } catch (e) { /* 退回 swipes */ }
+
+      if (typeof getChatMessages === "function") {
+        const msgs = await getChatMessages("0", { include_swipe: true });
+        const swipes = msgs && msgs[0] && Array.isArray(msgs[0].swipes) ? msgs[0].swipes : [];
+        if (swipes.length) return { list: swipes, source: "swipes" };
+      }
+
+      return { list: [], source: "none" };
+    }
+
     async function loadOpeningsFromSwipes() {
       const listEl = qs("#opening-list");
       if (!listEl) return;
-      listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">读取中…</div><div class="desc">正在读取开场白 swipes</div></div></div></li>';
+      listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">读取中…</div><div class="desc">正在读取开场白</div></div></div></li>';
 
       try {
-        if (typeof getChatMessages !== "function") {
-          throw new Error("当前环境没有 getChatMessages");
+        const got = await fetchGreetings();
+        openingList = got.list;
+        if (got.source === "none") {
+          throw new Error("当前环境读不到角色卡，也读不到 getChatMessages");
         }
-        const msgs = await getChatMessages("0", { include_swipe: true });
-        const swipes = msgs && msgs[0] && Array.isArray(msgs[0].swipes) ? msgs[0].swipes : [];
-        if (!swipes.length || swipes.length <= 1) {
-          listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">暂无开场白</div><div class="desc">未找到可切换的 alternate swipes</div></div></div></li>';
+        if (openingList.length <= 1) {
+          listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">暂无开场白</div><div class="desc">角色卡里没有可切换的开场白</div></div></div></li>';
         } else {
         listEl.innerHTML = "";
-        // 与 ZYZ 一致：从 index 1 起；若某条仍是 shell 文案则跳过
+        // index 0 是 first_mes（外壳文案），从 1 起；若某条仍是 shell 文案则跳过
         let seq = 0;
-        for (let i = 1; i < swipes.length; i++) {
-          const raw = String(swipes[i] == null ? "" : swipes[i]);
+        for (let i = 1; i < openingList.length; i++) {
+          const raw = String(openingList[i] == null ? "" : openingList[i]);
           if (isShellGreeting(raw)) continue;
           const p = parseGreeting(raw);
           const title = p.title || ("开场白 " + String(i).padStart(2, "0"));
-          const desc = p.desc || ("swipe #" + i + " · 点击切换");
+          const desc = p.desc || ("第 " + i + " 条 · 点击切换");
           seq += 1;
 
           const li = document.createElement("li");
@@ -1095,10 +1132,10 @@
             '</div></div><span class="chevron">›</span>';
 
           btn.setAttribute("onclick", "window.sqyApplyOpening&&window.sqyApplyOpening(" + i + ")");
-          btn.onclick = (function (swipeId) {
+          btn.onclick = (function (openingId) {
             return function (e) {
               if (e && e.preventDefault) e.preventDefault();
-              if (window.sqyApplyOpening) window.sqyApplyOpening(swipeId);
+              if (window.sqyApplyOpening) window.sqyApplyOpening(openingId);
             };
           })(i);
 
@@ -1107,7 +1144,7 @@
         }
 
         if (!listEl.children.length) {
-          listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">暂无开场白</div><div class="desc">可切换 swipe 为空</div></div></div></li>';
+          listEl.innerHTML = '<li><div class="list-row no-thumb"><div class="meta"><div class="name">暂无开场白</div><div class="desc">可切换的开场白为空</div></div></div></li>';
         }
         }
       } catch (e) {
@@ -1178,17 +1215,23 @@
     window.sqyShowView = showView;
     window.sqyGoBack = showView;
     window.sqyOpenCharacter = function (i) { openCharacter(Number(i)); };
-    window.sqyApplyOpening = async function (swipeId) {
-      swipeId = Number(swipeId);
+    window.sqyApplyOpening = async function (openingId) {
+      openingId = Number(openingId);
       try {
         if (typeof getChatMessages !== "function" || typeof setChatMessage !== "function") {
           throw new Error("缺少 getChatMessages / setChatMessage");
         }
+        var content = openingList[openingId];
+        if (!content) throw new Error("第 " + openingId + " 条开场白不存在");
+        content = String(content);
+
+        // 卡里改过开场白时，chat 的 swipes 是旧快照，下标对不上，
+        // 所以按内容找对应 swipe；找不到就直接写进当前 swipe
         var m = await getChatMessages("0", { include_swipe: true });
-        var content = m && m[0] && m[0].swipes && m[0].swipes[swipeId];
-        if (!content) throw new Error("swipe #" + swipeId + " 不存在");
-        await setChatMessage(String(content), 0, {
-          swipe_id: swipeId,
+        var swipes = m && m[0] && Array.isArray(m[0].swipes) ? m[0].swipes : [];
+        var hit = swipes.indexOf(content);
+        await setChatMessage(content, 0, {
+          swipe_id: hit >= 0 ? hit : "current",
           refresh: "display_and_render_current",
         });
       } catch (err) {
