@@ -594,6 +594,137 @@
       font-size: 15px;
       padding-bottom: calc(var(--player-h) + var(--tab-h));
     }
+
+    /* ---------- 手机端适配：桌面 (≥481px) 完全不动 ----------
+       酒馆移动端 iframe 常被消息气泡压到 280–380px，原 34/20px 字会显得又挤又大 */
+    @media (max-width: 480px) {
+      :root {
+        --phone-h: 620px;
+        --tab-h: 48px;
+        --player-h: 56px;
+      }
+      html, body {
+        min-height: var(--phone-h);
+      }
+      .phone {
+        max-width: none;
+        width: 100%;
+        min-height: 560px;
+        height: var(--phone-h);
+      }
+      .scroll {
+        padding: 0 14px;
+        padding-bottom: calc(var(--player-h) + var(--tab-h) + var(--safe-bottom) + 12px);
+      }
+      .scroll.no-player {
+        padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 12px);
+      }
+      .top-bar {
+        padding: 6px 2px 2px;
+        min-height: 40px;
+      }
+      .icon-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+      }
+      .icon-btn.ghost { font-size: 20px; }
+      .page-title {
+        font-size: 26px;
+        margin: 2px 0 12px;
+      }
+      .section-title {
+        font-size: 18px;
+        margin: 20px 0 10px;
+      }
+      .lib-item {
+        gap: 10px;
+        padding: 10px 0;
+      }
+      .lib-icon { width: 22px; height: 22px; }
+      .lib-icon svg { width: 20px; height: 20px; }
+      .lib-label { font-size: 16px; }
+      .chevron { font-size: 16px; }
+      .featured { margin: 4px 0 14px; }
+      .featured .ph-square {
+        width: min(148px, 42vw);
+        height: min(148px, 42vw);
+      }
+      .featured-name {
+        max-width: min(148px, 42vw);
+        font-size: 12px;
+      }
+      .recent-grid { gap: 12px 10px; }
+      .recent-card .name { font-size: 13px; }
+      .recent-card .sub { font-size: 12px; }
+      .list-row {
+        gap: 10px;
+        padding: 8px 0;
+      }
+      .list-row .row-index {
+        width: 18px;
+        font-size: 13px;
+      }
+      .list-row .meta .name { font-size: 15px; }
+      .list-row .meta .desc { font-size: 13px; }
+      .list-row .thumb {
+        width: 48px;
+        height: 48px;
+      }
+      .list-row .avatar {
+        width: 44px;
+        height: 44px;
+      }
+      .detail-scroll { padding: 6px 16px 40px; }
+      .detail-art {
+        width: min(100%, 240px);
+        margin: 6px auto 14px;
+        border-radius: 12px;
+      }
+      .detail-head h1 { font-size: 22px; }
+      .detail-head { margin-bottom: 10px; }
+      .detail-tags { gap: 6px; }
+      .detail-tag {
+        font-size: 12px;
+        padding: 4px 9px;
+      }
+      .detail-slogan {
+        font-size: 13px;
+        padding: 10px 12px;
+      }
+      .text-block { padding: 12px 14px; }
+      .text-block h3 { font-size: 13px; }
+      .text-block .body { font-size: 14px; line-height: 1.55; }
+      .mini-player {
+        height: var(--player-h);
+        padding: 0 10px 0 8px;
+      }
+      .mini-art {
+        width: 40px;
+        height: 40px;
+      }
+      .mini-title { font-size: 13px; }
+      .mini-sub { font-size: 11px; }
+      .mini-btn { font-size: 18px; }
+      .tab { font-size: 9px; padding-top: 4px; }
+      .tab svg { width: 22px; height: 22px; }
+    }
+
+    /* 更窄的气泡（常见于酒馆手机端消息宽度）再压一档 */
+    @media (max-width: 360px) {
+      .page-title { font-size: 22px; }
+      .lib-label { font-size: 15px; }
+      .section-title { font-size: 16px; }
+      .scroll { padding: 0 12px; padding-bottom: calc(var(--player-h) + var(--tab-h) + var(--safe-bottom) + 10px); }
+      .featured .ph-square {
+        width: min(128px, 46vw);
+        height: min(128px, 46vw);
+      }
+      .featured-name { max-width: min(128px, 46vw); }
+      .detail-head h1 { font-size: 20px; }
+      .list-row .meta .name { font-size: 14px; }
+      .list-row .meta .desc { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -980,11 +1111,21 @@
         document.documentElement.style.minHeight = "";
         document.body.style.minHeight = "";
         var phone = qs(".phone");
+        var narrow = window.innerWidth > 0 && window.innerWidth <= 480;
+        var floor = narrow ? 520 : 680;
         var h = Math.ceil(Math.max(
           phone ? phone.offsetHeight : 0,
           phone ? phone.scrollHeight : 0,
-          680
+          floor
         ));
+        // 手机端别无限拉高成长条：封顶约一屏半
+        if (narrow) {
+          var cap = Math.max(floor, Math.round(window.innerHeight * 1.35) || 720);
+          if (h > cap) h = cap;
+          if (phone) phone.style.height = h + "px";
+        } else if (phone) {
+          phone.style.height = "";
+        }
         document.documentElement.style.height = h + "px";
         document.body.style.height = h + "px";
         document.documentElement.style.minHeight = h + "px";
@@ -993,6 +1134,8 @@
           window.frameElement.style.height = h + "px";
           window.frameElement.style.minHeight = h + "px";
           window.frameElement.style.maxHeight = "none";
+          window.frameElement.style.width = "100%";
+          window.frameElement.style.maxWidth = "100%";
         }
       } catch (e) {}
     }
