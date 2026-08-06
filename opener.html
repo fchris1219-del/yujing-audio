@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>开场白管理</title>
+  <script>
+    /* 首屏前先按屏幕宽度挂窄屏类，避免等 JS 布局后才缩小字号 */
+    (function () {
+      try {
+        var sw = (window.screen && screen.width) ? screen.width : 9999;
+        var vw = Math.min(window.innerWidth || 9999, document.documentElement.clientWidth || 9999);
+        if (sw <= 500 || vw <= 520) document.documentElement.classList.add("is-narrow");
+        if (Math.min(sw, vw) <= 340) document.documentElement.classList.add("is-xcompact");
+      } catch (e) {}
+    })();
+  </script>
   <style>
     :root {
       --bg: #000;
@@ -595,144 +606,153 @@
       padding-bottom: calc(var(--player-h) + var(--tab-h));
     }
 
-    /* ---------- 手机端适配：桌面 (≥481px) 完全不动 ----------
-       酒馆移动端 iframe 常被消息气泡压到 280–380px，原 34/20px 字会显得又挤又大 */
-    @media (max-width: 480px) {
-      :root {
-        --phone-h: 620px;
-        --tab-h: 48px;
-        --player-h: 56px;
-      }
-      html, body {
-        min-height: var(--phone-h);
-      }
-      .phone {
-        max-width: none;
-        width: 100%;
-        min-height: 560px;
-        height: var(--phone-h);
-      }
-      .scroll {
-        padding: 0 14px;
-        padding-bottom: calc(var(--player-h) + var(--tab-h) + var(--safe-bottom) + 12px);
-      }
-      .scroll.no-player {
-        padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 12px);
-      }
-      .top-bar {
-        padding: 6px 2px 2px;
-        min-height: 40px;
-      }
-      .icon-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
-      }
-      .icon-btn.ghost { font-size: 20px; }
-      .page-title {
-        font-size: 26px;
-        margin: 2px 0 12px;
-      }
-      .section-title {
-        font-size: 18px;
-        margin: 20px 0 10px;
-      }
-      .lib-item {
-        gap: 10px;
-        padding: 10px 0;
-      }
-      .lib-icon { width: 22px; height: 22px; }
-      .lib-icon svg { width: 20px; height: 20px; }
-      .lib-label { font-size: 16px; }
-      .chevron { font-size: 16px; }
-      .featured { margin: 4px 0 14px; }
-      .featured .ph-square {
-        width: min(148px, 42vw);
-        height: min(148px, 42vw);
-      }
-      .featured-name {
-        max-width: min(148px, 42vw);
-        font-size: 12px;
-      }
-      .recent-grid { gap: 12px 10px; }
-      .recent-card .name { font-size: 13px; }
-      .recent-card .sub { font-size: 12px; }
-      .list-row {
-        gap: 10px;
-        padding: 8px 0;
-      }
-      .list-row .row-index {
-        width: 18px;
-        font-size: 13px;
-      }
-      .list-row .meta .name { font-size: 15px; }
-      .list-row .meta .desc { font-size: 13px; }
-      .list-row .thumb {
-        width: 48px;
-        height: 48px;
-      }
-      .list-row .avatar {
-        width: 44px;
-        height: 44px;
-      }
-      .detail-scroll { padding: 6px 16px 40px; }
-      .detail-art {
-        width: min(100%, 240px);
-        margin: 6px auto 14px;
-        border-radius: 12px;
-      }
-      .detail-head h1 { font-size: 20px; letter-spacing: 0.02em; }
-      .detail-head .role { font-size: 12px; margin-top: 4px; }
-      .detail-head { margin-bottom: 10px; gap: 8px; }
-      .detail-actions { gap: 8px; }
-      .circle-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
-      }
-      .detail-tags { gap: 6px; }
-      .detail-tag {
-        font-size: 12px;
-        padding: 4px 9px;
-      }
-      .detail-slogan {
-        font-size: 13px;
-        padding: 10px 12px;
-      }
-      .text-block { padding: 12px 14px; }
-      .text-block h3 { font-size: 13px; }
-      .text-block .body { font-size: 14px; line-height: 1.55; }
-      .mini-player {
-        height: var(--player-h);
-        padding: 0 10px 0 8px;
-      }
-      .mini-art {
-        width: 40px;
-        height: 40px;
-      }
-      .mini-title { font-size: 13px; }
-      .mini-sub { font-size: 11px; }
-      .mini-btn { font-size: 18px; }
-      .tab { font-size: 9px; padding-top: 4px; }
-      .tab svg { width: 22px; height: 22px; }
+    /* ---------- 窄屏适配（桌面宽屏不加 .is-narrow，样式完全不动） ----------
+       酒馆手机端 iframe 的 innerWidth 经常虚高，@media 不可靠；
+       由 JS 根据机身/父框真实宽度挂上 html.is-narrow */
+    html.is-narrow {
+      --phone-h: 580px;
+      --tab-h: 46px;
+      --player-h: 52px;
     }
+    html.is-narrow,
+    html.is-narrow body {
+      min-height: var(--phone-h);
+    }
+    html.is-narrow .phone {
+      max-width: none !important;
+      width: 100% !important;
+      min-height: 520px;
+      height: var(--phone-h);
+      margin: 0;
+    }
+    html.is-narrow .scroll {
+      padding: 0 12px;
+      padding-bottom: calc(var(--player-h) + var(--tab-h) + var(--safe-bottom) + 10px);
+    }
+    html.is-narrow .scroll.no-player {
+      padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 10px);
+    }
+    html.is-narrow .top-bar {
+      padding: 4px 0 2px;
+      min-height: 36px;
+    }
+    html.is-narrow .icon-btn {
+      width: 26px;
+      height: 26px;
+      font-size: 13px;
+    }
+    html.is-narrow .icon-btn.ghost { font-size: 18px; }
+    html.is-narrow .page-title {
+      font-size: 22px !important;
+      margin: 2px 0 10px;
+      letter-spacing: 0;
+    }
+    html.is-narrow .section-title {
+      font-size: 16px !important;
+      margin: 16px 0 8px;
+    }
+    html.is-narrow .lib-item {
+      gap: 8px;
+      padding: 8px 0;
+    }
+    html.is-narrow .lib-icon { width: 20px; height: 20px; }
+    html.is-narrow .lib-icon svg { width: 18px; height: 18px; }
+    html.is-narrow .lib-label { font-size: 15px !important; }
+    html.is-narrow .chevron { font-size: 15px; }
+    html.is-narrow .featured { margin: 2px 0 12px; }
+    html.is-narrow .featured .ph-square {
+      width: min(120px, 38vw) !important;
+      height: min(120px, 38vw) !important;
+    }
+    html.is-narrow .featured-name {
+      max-width: min(120px, 38vw);
+      font-size: 11px;
+    }
+    html.is-narrow .recent-grid { gap: 10px 8px; }
+    html.is-narrow .recent-card .name { font-size: 12px; }
+    html.is-narrow .recent-card .sub { font-size: 11px; }
+    html.is-narrow .list-row {
+      gap: 8px;
+      padding: 7px 0;
+    }
+    html.is-narrow .list-row .row-index {
+      width: 16px;
+      font-size: 12px;
+    }
+    html.is-narrow .list-row .meta .name { font-size: 14px !important; }
+    html.is-narrow .list-row .meta .desc { font-size: 12px !important; }
+    html.is-narrow .list-row .thumb {
+      width: 42px;
+      height: 42px;
+    }
+    html.is-narrow .list-row .avatar {
+      width: 40px;
+      height: 40px;
+    }
+    html.is-narrow .detail-scroll { padding: 4px 12px 36px; }
+    html.is-narrow .detail-art {
+      width: min(100%, 200px) !important;
+      margin: 4px auto 12px;
+      border-radius: 10px;
+    }
+    html.is-narrow .detail-head {
+      margin-bottom: 8px;
+      gap: 6px;
+    }
+    html.is-narrow .detail-head h1 {
+      font-size: 18px !important;
+      letter-spacing: 0.01em;
+      line-height: 1.25;
+    }
+    html.is-narrow .detail-head .role {
+      font-size: 11px !important;
+      margin-top: 3px;
+    }
+    html.is-narrow .detail-actions { gap: 6px; }
+    html.is-narrow .circle-btn {
+      width: 26px;
+      height: 26px;
+      font-size: 11px;
+    }
+    html.is-narrow .detail-tags { gap: 5px; margin-bottom: 12px; }
+    html.is-narrow .detail-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+    }
+    html.is-narrow .detail-slogan {
+      font-size: 12px;
+      padding: 8px 10px;
+    }
+    html.is-narrow .text-block { padding: 10px 12px; }
+    html.is-narrow .text-block h3 { font-size: 12px; }
+    html.is-narrow .text-block .body {
+      font-size: 13px !important;
+      line-height: 1.5;
+    }
+    html.is-narrow .mini-player {
+      height: var(--player-h);
+      padding: 0 8px 0 6px;
+    }
+    html.is-narrow .mini-art {
+      width: 36px;
+      height: 36px;
+    }
+    html.is-narrow .mini-title { font-size: 12px; }
+    html.is-narrow .mini-sub { font-size: 10px; }
+    html.is-narrow .mini-btn { font-size: 16px; }
+    html.is-narrow .tab { font-size: 9px; padding-top: 3px; }
+    html.is-narrow .tab svg { width: 20px; height: 20px; }
 
-    /* 更窄的气泡（常见于酒馆手机端消息宽度）再压一档 */
-    @media (max-width: 360px) {
-      .page-title { font-size: 22px; }
-      .lib-label { font-size: 15px; }
-      .section-title { font-size: 16px; }
-      .scroll { padding: 0 12px; padding-bottom: calc(var(--player-h) + var(--tab-h) + var(--safe-bottom) + 10px); }
-      .featured .ph-square {
-        width: min(128px, 46vw);
-        height: min(128px, 46vw);
-      }
-      .featured-name { max-width: min(128px, 46vw); }
-      .detail-head h1 { font-size: 18px; }
-      .detail-head .role { font-size: 11px; }
-      .list-row .meta .name { font-size: 14px; }
-      .list-row .meta .desc { font-size: 12px; }
+    /* 极窄气泡再压一档 */
+    html.is-narrow.is-xcompact .page-title { font-size: 20px !important; }
+    html.is-narrow.is-xcompact .lib-label { font-size: 14px !important; }
+    html.is-narrow.is-xcompact .detail-head h1 { font-size: 16px !important; }
+    html.is-narrow.is-xcompact .detail-head .role { font-size: 10px !important; }
+    html.is-narrow.is-xcompact .featured .ph-square {
+      width: min(108px, 42vw) !important;
+      height: min(108px, 42vw) !important;
     }
+    html.is-narrow.is-xcompact .text-block .body { font-size: 12px !important; }
   </style>
 </head>
 <body>
@@ -1113,22 +1133,69 @@
       return String(text || "").includes(SHELL_HINT);
     }
 
+    // 酒馆手机端 iframe 的 innerWidth 经常虚高，不能只靠 @media
+    function syncNarrowMode() {
+      try {
+        var root = document.documentElement;
+        var phone = qs(".phone");
+        var layoutW = Math.min(
+          window.innerWidth || 9999,
+          root.clientWidth || 9999,
+          (window.visualViewport && visualViewport.width) || 9999
+        );
+        var phoneW = phone ? phone.getBoundingClientRect().width : layoutW;
+        var screenW = (window.screen && screen.width) ? screen.width : 9999;
+        var frameW = 9999;
+        if (window.frameElement) {
+          try {
+            frameW = frameElement.getBoundingClientRect().width || 9999;
+            frameElement.style.width = "100%";
+            frameElement.style.maxWidth = "100%";
+            frameElement.style.minWidth = "0";
+            frameElement.style.display = "block";
+          } catch (e1) {}
+        }
+        var coarse = false;
+        try {
+          coarse = window.matchMedia && (
+            matchMedia("(pointer: coarse)").matches ||
+            matchMedia("(hover: none)").matches
+          );
+        } catch (e2) {}
+        // 任一真实宽度够窄，或触屏小屏，都当手机
+        var narrow =
+          layoutW <= 520 ||
+          phoneW <= 410 ||
+          frameW <= 520 ||
+          screenW <= 500 ||
+          (coarse && screenW <= 900 && layoutW <= 900);
+        var xcompact = narrow && Math.min(layoutW, phoneW, frameW) <= 340;
+        root.classList.toggle("is-narrow", !!narrow);
+        root.classList.toggle("is-xcompact", !!xcompact);
+        return !!narrow;
+      } catch (e) {
+        return false;
+      }
+    }
+
     // ST iframe：把 html/body/frame 高度撑到手机框，避免父级 height:auto 塌缩
     function syncHeight() {
       try {
+        var narrow = syncNarrowMode();
         document.documentElement.style.minHeight = "";
         document.body.style.minHeight = "";
         var phone = qs(".phone");
-        var narrow = window.innerWidth > 0 && window.innerWidth <= 480;
-        var floor = narrow ? 520 : 680;
+        var floor = narrow ? 480 : 680;
         var h = Math.ceil(Math.max(
           phone ? phone.offsetHeight : 0,
           phone ? phone.scrollHeight : 0,
           floor
         ));
-        // 手机端别无限拉高成长条：封顶约一屏半
+        // 手机端别无限拉高成长条
         if (narrow) {
-          var cap = Math.max(floor, Math.round(window.innerHeight * 1.35) || 720);
+          var cap = Math.max(floor, Math.round((window.visualViewport && visualViewport.height) || window.innerHeight || 640));
+          // 至多约一屏，避免细长条
+          if (cap < 480) cap = 560;
           if (h > cap) h = cap;
           if (phone) phone.style.height = h + "px";
         } else if (phone) {
@@ -1519,6 +1586,9 @@
 
     window.addEventListener("load", syncHeight);
     window.addEventListener("resize", syncHeight);
+    if (window.visualViewport) {
+      visualViewport.addEventListener("resize", syncHeight);
+    }
 
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", boot);
