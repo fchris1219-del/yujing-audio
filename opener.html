@@ -1009,10 +1009,12 @@
     const user = "{{user}}";
     const userName = user.includes("{{") ? "" : String(user).trim();
     const userInitial = [...userName][0] || "·";
+    /* 拆开构造，避免外层加载器在页面执行前把搜索标记本身替换掉 */
+    const USER_MACRO = "{{" + "user" + "}}";
 
     function expandUserMacro(value) {
       var text = String(value == null ? "" : value);
-      return userName ? text.split("{{user}}").join(userName) : text;
+      return userName ? text.split(USER_MACRO).join(userName) : text;
     }
 
     function resolveUserAvatarUrl() {
