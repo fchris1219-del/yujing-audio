@@ -1010,6 +1010,11 @@
     const userName = user.includes("{{") ? "" : String(user).trim();
     const userInitial = [...userName][0] || "·";
 
+    function expandUserMacro(value) {
+      var text = String(value == null ? "" : value);
+      return userName ? text.split("{{user}}").join(userName) : text;
+    }
+
     function resolveUserAvatarUrl() {
       try {
         if (typeof getThumbnailUrl === "function") {
@@ -1126,8 +1131,8 @@
       const tm = text.match(/<!--\s*title:\s*([\s\S]*?)\s*-->/i);
       const dm = text.match(/<!--\s*desc:\s*([\s\S]*?)\s*-->/i);
       return {
-        title: tm ? String(tm[1] || "").trim() : "",
-        desc: dm ? String(dm[1] || "").trim() : "",
+        title: tm ? expandUserMacro(String(tm[1] || "").trim()) : "",
+        desc: dm ? expandUserMacro(String(dm[1] || "").trim()) : "",
         raw: text,
       };
     }
