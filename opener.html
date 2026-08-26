@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>开场白管理</title>
+  <link rel="preload" as="audio" type="audio/mpeg" href="https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.0/audio/A-COLD-PLAY.mp3" />
   <script>
     /* 首屏前先按屏幕宽度挂窄屏类，避免等 JS 布局后才缩小字号 */
     (function () {
@@ -31,7 +32,9 @@
       /* 内容机身始终保持手机宽度；浏览器缩放只改变视觉尺寸，不改变内部排版宽度 */
       --phone-w: 430px;
       /* ST iframe 父高常为 auto，height:100% 会塌成一条底栏；给手机框固定可视高度 */
-      --phone-h: 720px;
+      --embed-height: 720px;
+      --frame-height: 720px;
+      --phone-h: var(--frame-height);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -965,7 +968,7 @@
 
     <!-- Mini Player -->
     <div class="mini-player" id="mini-player">
-      <audio id="mini-audio" preload="metadata" src="https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.0/audio/A-COLD-PLAY.mp3"></audio>
+      <audio id="mini-audio" preload="auto" src="https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.0/audio/A-COLD-PLAY.mp3"></audio>
       <div class="ph-square mini-art has-img">
         <img class="cover-img" src="https://i.postimg.cc/QMGMzGCt/jie-ping2026-08-01-11-11-12.png" alt="曲封" />
       </div>
@@ -974,7 +977,7 @@
         <div class="a" id="mini-artist">The Kid LAROI</div>
       </div>
       <div class="mini-controls">
-        <button type="button" id="mini-play" aria-label="播放">▶</button>
+        <button type="button" id="mini-play" aria-label="播放" aria-pressed="false">▶</button>
         <button type="button" id="mini-next" aria-label="下一首">⏭</button>
       </div>
     </div>
@@ -1087,7 +1090,7 @@
         name: "余令嘉",
         tags: ["嗑药男", "贱货", "比格犬", "好狗狗", "音乐制作人"],
         slogan: "今天的我是好孩子吗？",
-        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.1/images/yu-lingjia.jpg",
+        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.32/images/yu-lingjia.jpg",
         objectPosition: "center 8%",
         bio: "录音笔：你觉得母亲的死亡对你有影响吗？我觉得其实，你所记住的事情太少了，很多你以为有关联的创伤可能和你想象的不一样。你对她印象还剩下什么？最深的一次……流血，流眼泪，哭着求你父亲不要离开这里。其他的……没有了吗？嗯，你继续说。在这十五年时间里，你遗忘的事情很多……一开始的时候能记住三四年，后来每三四个月就会忘掉一些人，一些事。说实话，令嘉，你吃的药太多了，你应该减掉一点量，你最近还有自我了结的想法吗？或者，我的建议是，你可以回国生活……\n\n……医生，我想，我最近想写歌了，因为创作是一件愉快的事情，因为就像呕吐，进食很好，但是进食让身体肮脏，疲惫，我可能还是需要吐出来。\n\n……医生，我最近碰到了一个，非常可爱的人，她喂我吃了一颗碳酸锂。",
         author: "有精神病但是治好了一点，傻逼美人，穷追猛打，像大运一样进入你的人生。\n搞音乐的，没什么边界感，话多而且经常感觉他精神状态不是很正常，但有时候很可爱（很多时候很可爱），不知道是s还是m，爱咬人，很公狗，在一起可能得挨操，有点像在被强奸，分手他可能会割手。",
@@ -1096,7 +1099,7 @@
         name: "宁为瑜",
         tags: ["冷感男", "控制狂", "恶趣味", "主人", "总裁哥"],
         slogan: "你想红？不用管他了，可以跟我。",
-        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.28/images/ning-weiyu.png",
+        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.32/images/ning-weiyu.png",
         objectPosition: "center 18%",
         bio: "对宁为瑜来说，爱情是一种诡异的玩笑，如果父亲能够不和阿猫阿狗生下一大堆小猫小狗，或者姐姐能够嫁给“爱情”，他大概会礼貌的恭维一下。但是实际上是连恭维的必要也没有。他也没有搞懂，你到底是怎么出现在他生命里的？在赛车场擦肩而过，还是在宴会上惊鸿一瞥，看见你的照片只要刷下卡就能让你跪在他面前，无论是美丽的脸颊或者是你的臣服，都可以是一串数字，一张发票，或者……一个吻？可爱的玩具，属于他的宝贝，情人，恋人，或者只是他的一只小狗，难道就不能他说什么你就是什么吗？爱你吗？也可以，但是你可不可以教教他，不带有黑色幽默的爱情到底是什么样的。\n\n一个会折下许愿柳，许愿你今天睡个好觉的坏男人。",
         author: "情绪稳定，但是控制狂，而且有时候很变态。\n天龙人，时尚行业总裁哥，打工赛车做衣服玩女人四不误，讲话喜欢拆台。有点冷幽默的贱，但是出手大方，比较纵容，杀个人也能帮你解决。值得一睡的主人，和余令嘉是两个类型的贱人，本质上都是畜生，有概率被他俩耍着玩儿，好消息被他操不太像被强奸，坏消息是他好像不把你当人。（没找到适合哥哥的脸，当作学生时代的毕业照吧，清纯）",
@@ -1105,7 +1108,7 @@
         name: "宋聿修",
         tags: ["狐狸男", "引导型人渣", "公务员", "闷骚", "daddy"],
         slogan: "亲爱的，这是你送给我的礼物吗？",
-        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.28/images/song-yuxiu.png",
+        avatar: "https://cdn.jsdelivr.net/gh/fchris1219-del/yujing-audio@v1.0.32/images/song-yuxiu.png",
         objectPosition: "center 8%",
         bio: "宋聿修可能是一个正常人吧，首先可以确认他爱你，至于你爱不爱他，或者你是不是只爱他并没有那么重要。他应该可以是你最好的情人，最好的丈夫，至少他从来没有想要剥夺你的人格。不管你背着老公出来和他偷情，还是背着他出去和别人偷情，是被扒光了放他面前，还是求他帮帮你。他都真诚的希望你幸福，包容你，保护你，他一定会陪伴你，教导你，帮助你。但如果你能够明白，世界很可怕，会真诚的爱你的人少之又少，如果你能乖乖的，做一个好孩子，好好听他的话，那就更好了。他当然也会乐于成为你的爱人，性玩具，心理咨询师，daddy。成为你的一切。\n\n他怎么会伤害你呢？这是你自愿的，宝贝。",
         author: "温柔而且很照顾人，有点小恶趣味\n一个daddy，一个老公，比较有边界感，可能需要主动一点但是不主动也行，恋爱观健康且诡异，准备引导你找到自我价值和人格，成长成一个好孩子，然后允许你求他操你。哥们儿有时候有点像痴汉，给他做娇妻应该会很幸福……吧？",
@@ -1556,6 +1559,57 @@
       if (!playBtn) return;
       playBtn.textContent = audio && !audio.paused ? "❚❚" : "▶";
       playBtn.setAttribute("aria-label", audio && !audio.paused ? "暂停" : "播放");
+      playBtn.setAttribute("aria-pressed", String(!!(audio && !audio.paused)));
+    }
+
+    // 打开卡片后立即尝试播放；若 WebView 拦截，则用首次点击/触摸/滑动解锁。
+    var autoPlayStarted = false;
+    var autoPlayPending = false;
+
+    function removeAutoPlayUnlock() {
+      document.removeEventListener("pointerdown", unlockAndPlay, true);
+      document.removeEventListener("touchstart", unlockAndPlay, true);
+      document.removeEventListener("click", unlockAndPlay, true);
+      document.removeEventListener("keydown", unlockAndPlay, true);
+    }
+
+    function requestAutoPlay() {
+      if (!audio || autoPlayStarted || autoPlayPending || !audio.paused) return;
+      autoPlayPending = true;
+      var played;
+      try {
+        played = audio.play();
+      } catch (err) {
+        autoPlayPending = false;
+        syncPlayBtn();
+        return;
+      }
+      Promise.resolve(played).then(function () {
+        autoPlayPending = false;
+        autoPlayStarted = true;
+        removeAutoPlayUnlock();
+        syncPlayBtn();
+      }).catch(function (err) {
+        autoPlayPending = false;
+        syncPlayBtn();
+        console.warn("自动播放被拦截，等待首次交互", err);
+      });
+    }
+
+    function unlockAndPlay(e) {
+      var target = e && e.target;
+      // 播放器按钮保留原来的播放/暂停语义，避免一次点击触发两次切换。
+      if (target && target.closest && target.closest("#mini-play, #mini-next")) return;
+      requestAutoPlay();
+    }
+
+    if (audio) {
+      audio.load();
+      document.addEventListener("pointerdown", unlockAndPlay, { capture: true, passive: true });
+      document.addEventListener("touchstart", unlockAndPlay, { capture: true, passive: true });
+      document.addEventListener("click", unlockAndPlay, true);
+      document.addEventListener("keydown", unlockAndPlay, true);
+      setTimeout(requestAutoPlay, 500);
     }
 
     if (playBtn && audio) {
@@ -1568,7 +1622,12 @@
         }
         syncPlayBtn();
       };
-      audio.addEventListener("play", syncPlayBtn);
+      audio.addEventListener("play", function () {
+        autoPlayStarted = true;
+        autoPlayPending = false;
+        removeAutoPlayUnlock();
+        syncPlayBtn();
+      });
       audio.addEventListener("pause", syncPlayBtn);
       audio.addEventListener("ended", function () {
         audio.currentTime = 0;
